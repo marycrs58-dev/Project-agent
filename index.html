@@ -339,13 +339,21 @@ function Pipeline({proyecto,onEtapaClick,grande=false}){
                 }}>
                   {etapa.label}
                 </span>
-                {/* Fechas */}
-                {(etapa.fechaInicio||etapa.fechaFin)&&(
-                  <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,marginTop:1}}>
-                    {etapa.fechaInicio&&(()=>{const dc=dateColor(etapa.fechaInicio,etapa.status);return <span style={{fontSize:dateSz,color:dc.c,fontWeight:600,background:dc.bg,borderRadius:3,padding:`1px ${grande?6:4}px`}}>▶ {fmtDate(etapa.fechaInicio)}</span>;})()}
-                    {etapa.fechaFin&&(()=>{const dc=dateColor(etapa.fechaFin,etapa.status);return <span style={{fontSize:dateSz,color:dc.c,fontWeight:600,background:dc.bg,borderRadius:3,padding:`1px ${grande?6:4}px`}}>⏱ {fmtDate(etapa.fechaFin)}</span>;})()}
-                  </div>
-                )}
+                {/* Fechas - siempre visibles */}
+                <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,marginTop:1}}>
+                  {(()=>{
+                    const dcI=etapa.fechaInicio?dateColor(etapa.fechaInicio,etapa.status):{c:"#C0C0C0",bg:"#F0F0F0"};
+                    const dcF=etapa.fechaFin?dateColor(etapa.fechaFin,etapa.status):{c:"#C0C0C0",bg:"#F0F0F0"};
+                    return(<>
+                      <span style={{fontSize:dateSz,color:dcI.c,fontWeight:etapa.fechaInicio?600:400,background:dcI.bg,borderRadius:3,padding:`1px ${grande?6:4}px`,opacity:etapa.fechaInicio?1:0.6}}>
+                        ▶ {etapa.fechaInicio?fmtDate(etapa.fechaInicio):"–"}
+                      </span>
+                      <span style={{fontSize:dateSz,color:dcF.c,fontWeight:etapa.fechaFin?600:400,background:dcF.bg,borderRadius:3,padding:`1px ${grande?6:4}px`,opacity:etapa.fechaFin?1:0.6}}>
+                        ⏱ {etapa.fechaFin?fmtDate(etapa.fechaFin):"–"}
+                      </span>
+                    </>);
+                  })()}
+                </div>
               </div>
               {/* Conector */}
               {i<proyecto.etapas.length-1&&(
@@ -353,7 +361,7 @@ function Pipeline({proyecto,onEtapaClick,grande=false}){
                   width:connW,height:connH,
                   background:done?PAL.teal:"#D1D5DB",
                   flexShrink:0,
-                  marginBottom:(etapa.fechaFin||etapa.fechaInicio)?grande?36:24:grande?20:14,
+                  marginBottom:grande?40:26,
                   borderRadius:2,
                 }}/>
               )}
@@ -1214,27 +1222,63 @@ function VistaProyecto({proyecto,equipoGlobal,onUpdate,onBack,esAdmin}){
   const tareasVis=filterTarea==="Todas"?proyecto.tareas:proyecto.tareas.filter(t=>t.status===filterTarea);
 
   return(
-    <div style={{fontFamily:"'DM Sans','Segoe UI',system-ui,sans-serif",maxWidth:880,margin:"0 auto",padding:"0 16px 40px"}}>
-      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:18,paddingTop:4}}>
-        <button onClick={onBack} style={{background:"none",border:"none",cursor:"pointer",color:PAL.teal,fontSize:22,padding:0,lineHeight:1}}>‹</button>
-        <div style={{width:14,height:14,borderRadius:"50%",background:proyecto.color,flexShrink:0}}/>
-        <div style={{flex:1}}><div style={{fontSize:20,fontWeight:800,color:PAL.text,letterSpacing:-0.5}}>{proyecto.nombre}</div><div style={{fontSize:13,color:PAL.gray}}>{proyecto.cliente} · {proyecto.maquilador}, {proyecto.pais}</div></div>
-        <Pill label={proyecto.categoria} color={proyecto.color}/>
-        {esAdmin&&<button onClick={()=>setEditProyecto(true)} style={{background:"none",border:"none",cursor:"pointer",color:PAL.gray,fontSize:18,padding:"2px 6px"}}>⚙️</button>}
+    <div style={{fontFamily:"'DM Sans','Segoe UI',system-ui,sans-serif",maxWidth:880,margin:"0 auto",padding:"0 0 40px"}}>
+
+      {/* ── BANNER ─────────────────────────────────────────────── */}
+      <div style={{background:"linear-gradient(135deg,#0A1628 0%,#1A3A6B 55%,#2563EB 100%)",borderRadius:"0 0 20px 20px",padding:"20px 24px 22px",marginBottom:20,position:"relative",overflow:"hidden"}}>
+        {/* Círculos decorativos */}
+        <div style={{position:"absolute",top:-40,right:-40,width:180,height:180,borderRadius:"50%",background:"rgba(255,255,255,0.04)"}}/>
+        <div style={{position:"absolute",bottom:-30,right:60,width:120,height:120,borderRadius:"50%",background:"rgba(255,255,255,0.03)"}}/>
+
+        <div style={{display:"flex",alignItems:"flex-start",gap:16,position:"relative"}}>
+          {/* Render del producto en el banner */}
+          {proyecto.render&&(
+            <div style={{width:80,height:80,borderRadius:14,overflow:"hidden",background:"rgba(255,255,255,0.12)",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <img src={proyecto.render} alt={proyecto.nombre} style={{width:"100%",height:"100%",objectFit:"contain",padding:4}}/>
+            </div>
+          )}
+          {/* Info principal */}
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+              <button onClick={onBack} style={{background:"rgba(255,255,255,0.15)",border:"none",cursor:"pointer",color:"#fff",fontSize:16,padding:"3px 10px",borderRadius:8,lineHeight:1,flexShrink:0}}>‹ Volver</button>
+              {proyecto.tipo&&<span style={{fontSize:11,background:"rgba(255,255,255,0.15)",color:"rgba(255,255,255,0.9)",borderRadius:20,padding:"2px 10px",fontWeight:600}}>{proyecto.tipo}</span>}
+              <Pill label={proyecto.categoria} color={proyecto.color}/>
+            </div>
+            <div style={{fontSize:24,fontWeight:900,color:"#fff",letterSpacing:-0.5,marginBottom:2}}>{proyecto.nombre}</div>
+            <div style={{fontSize:13,color:"rgba(255,255,255,0.7)"}}>{proyecto.cliente} · 🏭 {proyecto.maquilador}, {proyecto.pais}</div>
+          </div>
+          {/* Métricas rápidas */}
+          <div style={{display:"flex",gap:10,flexShrink:0,flexWrap:"wrap",justifyContent:"flex-end"}}>
+            <div style={{background:"rgba(255,255,255,0.12)",borderRadius:10,padding:"8px 14px",textAlign:"center",minWidth:70}}>
+              <div style={{fontSize:22,fontWeight:900,color:"#fff"}}>{progreso(proyecto)}%</div>
+              <div style={{fontSize:10,color:"rgba(255,255,255,0.6)"}}>avance</div>
+            </div>
+            <div style={{background:"rgba(255,255,255,0.12)",borderRadius:10,padding:"8px 14px",textAlign:"center",minWidth:70}}>
+              <div style={{fontSize:13,fontWeight:700,color:PAL.amber}}>🚀</div>
+              <div style={{fontSize:11,fontWeight:700,color:"#fff"}}>{proyecto.fechaLanzamiento}</div>
+              <div style={{fontSize:10,color:"rgba(255,255,255,0.6)"}}>lanzamiento</div>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:6,justifyContent:"center"}}>
+              {esAdmin&&<button onClick={()=>setEditProyecto(true)} style={{background:"rgba(255,255,255,0.15)",border:"none",cursor:"pointer",color:"#fff",fontSize:13,padding:"5px 10px",borderRadius:8}}>⚙️ Editar</button>}
+            </div>
+          </div>
+        </div>
+
+        {/* Barra de progreso en el banner */}
+        <div style={{marginTop:16,height:5,background:"rgba(255,255,255,0.15)",borderRadius:99,overflow:"hidden"}}>
+          <div style={{width:`${progreso(proyecto)}%`,height:"100%",background:proyecto.color,borderRadius:99,transition:"width 1s",boxShadow:`0 0 8px ${proyecto.color}`}}/>
+        </div>
+        <div style={{display:"flex",justifyContent:"space-between",marginTop:4,fontSize:10,color:"rgba(255,255,255,0.5)"}}>
+          <span>{proyecto.etapas.filter(e=>e.status==="Completado").length} de {proyecto.etapas.length} etapas completadas</span>
+          <span>{proyecto.tareas.length} tareas · {proyecto.equipo?.length||0} personas</span>
+        </div>
       </div>
 
-      {/* Render + Riesgos */}
-      <div style={{display:"grid",gridTemplateColumns:proyecto.render?"180px 1fr":"1fr",gap:14,marginBottom:14}}>
-        {/* Render del producto */}
-        {proyecto.render&&(
-          <div style={{background:PAL.surface,border:`1px solid ${PAL.border}`,borderRadius:14,overflow:"hidden",display:"flex",flexDirection:"column"}}>
-            <div style={{flex:1,background:"#f8f8f8",display:"flex",alignItems:"center",justifyContent:"center",padding:8,minHeight:140}}>
-              <img src={proyecto.render} alt={proyecto.nombre} style={{maxWidth:"100%",maxHeight:160,objectFit:"contain"}}/>
-            </div>
-            <div style={{padding:"6px 10px",borderTop:`1px solid ${PAL.border}`,fontSize:11,color:PAL.gray,textAlign:"center"}}>{proyecto.nombre}</div>
-          </div>
-        )}
-        {/* Panel de riesgos */}
+      {/* Contenido con padding lateral */}
+      <div style={{padding:"0 16px"}}>
+
+      {/* Panel de riesgos */}
+      <div style={{marginBottom:14}}>
         <div style={{background:PAL.surface,border:`1px solid ${PAL.border}`,borderRadius:14,padding:"14px 16px"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
             <span style={{fontSize:13,fontWeight:700,color:PAL.text}}>⚠️ Riesgos del proyecto</span>
@@ -1391,6 +1435,7 @@ function VistaProyecto({proyecto,equipoGlobal,onUpdate,onBack,esAdmin}){
       {configEtapas&&<EtapasConfigModal etapas={proyecto.etapas} onSave={etapas=>onUpdate({...proyecto,etapas:etapas.map(e=>({...e,entregables:e.entregables||[]}))})} onClose={()=>setConfigEtapas(false)}/>}
       {modalRiesgo!==null&&<RiesgoModal riesgo={modalRiesgo} onSave={saveRiesgo} onClose={()=>setModalRiesgo(null)}/>}
       {confirmDel&&(<Overlay onClose={()=>setConfirmDel(null)}><div style={{background:PAL.surface,borderRadius:14,padding:24,width:300,textAlign:"center"}}><div style={{fontSize:15,fontWeight:700,marginBottom:8}}>¿Eliminar tarea?</div><div style={{fontSize:13,color:PAL.gray,marginBottom:20}}>Esta acción no se puede deshacer.</div><div style={{display:"flex",gap:10}}><Btn v="secondary" style={{flex:1}} onClick={()=>setConfirmDel(null)}>Cancelar</Btn><Btn v="danger" style={{flex:1}} onClick={()=>delTarea(confirmDel)}>Eliminar</Btn></div></div></Overlay>)}
+      </div>{/* fin contenido con padding */}
     </div>
   );
 }
