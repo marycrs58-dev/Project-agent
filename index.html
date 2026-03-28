@@ -1233,8 +1233,8 @@ function VistaProyecto({proyecto,equipoGlobal,onUpdate,onBack,esAdmin}){
         <div style={{display:"flex",alignItems:"flex-start",gap:16,position:"relative"}}>
           {/* Render del producto en el banner */}
           {proyecto.render&&(
-            <div style={{width:80,height:80,borderRadius:14,overflow:"hidden",background:"rgba(255,255,255,0.8)",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",border:"1px solid #C7D9F8"}}>
-              <img src={proyecto.render} alt={proyecto.nombre} style={{width:"100%",height:"100%",objectFit:"contain",padding:4}}/>
+            <div style={{width:120,height:120,borderRadius:14,overflow:"hidden",background:"rgba(255,255,255,0.8)",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",border:"1px solid #C7D9F8"}}>
+              <img src={proyecto.render} alt={proyecto.nombre} style={{width:"100%",height:"100%",objectFit:"contain",padding:6}}/>
             </div>
           )}
           {/* Info principal */}
@@ -1277,6 +1277,26 @@ function VistaProyecto({proyecto,equipoGlobal,onUpdate,onBack,esAdmin}){
       {/* Contenido con padding lateral */}
       <div style={{padding:"0 16px"}}>
 
+      {/* Pipeline */}
+      <div style={{background:PAL.surface,border:`1px solid ${PAL.border}`,borderRadius:14,padding:"14px 16px",marginBottom:14}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+          <span style={{fontSize:13,fontWeight:700,color:PAL.text}}>Proceso de desarrollo — {progreso(proyecto)}% completado</span>
+          <div style={{display:"flex",gap:8,alignItems:"center"}}>
+            <span style={{fontSize:13,fontWeight:700,color:PAL.teal,background:PAL.tealLight,padding:"4px 12px",borderRadius:8,border:`1px solid ${PAL.teal}44`}}>🚀 Lanzamiento: {proyecto.fechaLanzamiento}</span>
+            {esAdmin&&<Btn v="secondary" style={{fontSize:11,padding:"3px 10px"}} onClick={()=>setConfigEtapas(true)}>⚙ Editar etapas</Btn>}
+            <button onClick={()=>setPipelineFullscreen(true)} title="Ver en pantalla completa"
+              style={{padding:"4px 10px",borderRadius:8,border:`1px solid ${PAL.border}`,background:PAL.surface,cursor:"pointer",fontSize:13,color:PAL.gray}}>⛶ Presentar</button>
+          </div>
+        </div>
+        <Pipeline proyecto={proyecto} onEtapaClick={esAdmin?(etapa,idx)=>setModalEtapa({etapa,idx}):null}/>
+      </div>
+
+      {/* Pipeline pantalla completa */}
+      {pipelineFullscreen&&ReactDOM.createPortal(
+        <FullscreenPipeline proyecto={proyecto} onClose={()=>setPipelineFullscreen(false)}/>,
+        document.body
+      )}
+
       {/* Panel de riesgos */}
       <div style={{marginBottom:14}}>
         <div style={{background:PAL.surface,border:`1px solid ${PAL.border}`,borderRadius:14,padding:"14px 16px"}}>
@@ -1318,25 +1338,6 @@ function VistaProyecto({proyecto,equipoGlobal,onUpdate,onBack,esAdmin}){
           )}
         </div>
       </div>
-
-      <div style={{background:PAL.surface,border:`1px solid ${PAL.border}`,borderRadius:14,padding:"14px 16px",marginBottom:14}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-          <span style={{fontSize:13,fontWeight:700,color:PAL.text}}>Proceso de desarrollo — {progreso(proyecto)}% completado</span>
-          <div style={{display:"flex",gap:8,alignItems:"center"}}>
-            <span style={{fontSize:13,fontWeight:700,color:PAL.teal,background:PAL.tealLight,padding:"4px 12px",borderRadius:8,border:`1px solid ${PAL.teal}44`}}>🚀 Lanzamiento: {proyecto.fechaLanzamiento}</span>
-            {esAdmin&&<Btn v="secondary" style={{fontSize:11,padding:"3px 10px"}} onClick={()=>setConfigEtapas(true)}>⚙ Editar etapas</Btn>}
-            <button onClick={()=>setPipelineFullscreen(true)} title="Ver en pantalla completa"
-              style={{padding:"4px 10px",borderRadius:8,border:`1px solid ${PAL.border}`,background:PAL.surface,cursor:"pointer",fontSize:13,color:PAL.gray}}>⛶ Presentar</button>
-          </div>
-        </div>
-        <Pipeline proyecto={proyecto} onEtapaClick={esAdmin?(etapa,idx)=>setModalEtapa({etapa,idx}):null}/>
-      </div>
-
-      {/* Pipeline pantalla completa */}
-      {pipelineFullscreen&&ReactDOM.createPortal(
-        <FullscreenPipeline proyecto={proyecto} onClose={()=>setPipelineFullscreen(false)}/>,
-        document.body
-      )}
 
       <div style={{display:"flex",gap:0,borderBottom:`2px solid ${PAL.border}`,marginBottom:18,overflowX:"auto"}}>
         {TABS_PROY.map(t=>(<button key={t} onClick={()=>setTab(t)} style={{padding:"9px 14px",border:"none",background:"none",cursor:"pointer",fontSize:13,color:tab===t?PAL.teal:PAL.gray,fontWeight:tab===t?700:500,borderBottom:`2px solid ${tab===t?PAL.teal:"transparent"}`,marginBottom:-2,whiteSpace:"nowrap"}}>{t}</button>))}
