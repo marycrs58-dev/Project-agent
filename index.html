@@ -121,7 +121,22 @@ function Btn({children,v="primary",...p}){const s={primary:{background:PAL.teal,
 function Field({label,children}){return(<div><label style={{fontSize:11,color:PAL.gray,display:"block",marginBottom:4,textTransform:"uppercase",letterSpacing:"0.04em"}}>{label}</label>{children}</div>);}
 function Inp(p){return <input {...p} style={{width:"100%",padding:"8px 11px",borderRadius:7,border:`1px solid ${PAL.border}`,fontSize:13,boxSizing:"border-box",outline:"none",background:PAL.surface,fontFamily:"inherit",...(p.style||{})}}/>;}
 function Sel({children,...p}){return <select {...p} style={{width:"100%",padding:"8px 11px",borderRadius:7,border:`1px solid ${PAL.border}`,fontSize:13,boxSizing:"border-box",outline:"none",background:PAL.surface,fontFamily:"inherit",...(p.style||{})}}>{children}</select>;}
-function Overlay({children}){return <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:70,display:"flex",alignItems:"center",justifyContent:"center"}}>{children}</div>;}
+function Overlay({children}){
+  return ReactDOM.createPortal(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.55)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={e=>{if(e.target===e.currentTarget)e.stopPropagation();}}>
+      {children}
+    </div>,
+    document.body
+  );
+}
+function SavingBadge(){
+  return ReactDOM.createPortal(
+    <div style={{position:"fixed",top:14,right:18,background:PAL.teal,color:"#fff",borderRadius:8,padding:"5px 14px",fontSize:12,zIndex:9998,boxShadow:"0 2px 12px rgba(0,0,0,0.2)"}}>
+      Guardando…
+    </div>,
+    document.body
+  );
+}
 function Spinner(){return <div style={{width:28,height:28,border:`3px solid ${PAL.border}`,borderTopColor:PAL.teal,borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>;}
 
 // ─── LOGIN ─────────────────────────────────────────────────────────────────────
@@ -1317,7 +1332,7 @@ function App(){
   if(proyectoActivo){
     const latest=proyectos.find(p=>p.id===proyectoActivo.id)||proyectoActivo;
     return(<div style={{background:PAL.bg,minHeight:"100vh"}}>
-      {saving&&<div style={{position:"fixed",top:12,right:16,background:PAL.teal,color:"#fff",borderRadius:8,padding:"5px 14px",fontSize:12,zIndex:99}}>Guardando…</div>}
+      {saving&&<SavingBadge/>}
       <VistaProyecto proyecto={latest} equipoGlobal={equipoGlobal} onUpdate={updateProyecto} onBack={()=>setProyectoActivo(null)} esAdmin={esAdmin}/>
     </div>);
   }
@@ -1356,7 +1371,7 @@ function App(){
 
   return(
     <div style={{fontFamily:"'DM Sans','Segoe UI',system-ui,sans-serif",minHeight:"100vh",background:"#EEECEA"}}>
-      {saving&&<div style={{position:"fixed",top:12,right:16,background:PAL.teal,color:"#fff",borderRadius:8,padding:"5px 14px",fontSize:12,zIndex:99}}>Guardando…</div>}
+      {saving&&<SavingBadge/>}
 
       {/* Banner superior */}
       <div style={{background:`linear-gradient(135deg, #0A1628 0%, #1A3A6B 50%, #2563EB 100%)`,padding:"28px 24px 24px",marginBottom:0}}>
