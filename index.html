@@ -1242,12 +1242,12 @@ function VistaProyecto({proyecto,equipoGlobal,onUpdate,onBack,esAdmin}){
 
       {/* ── BANNER STICKY ──────────────────────────────────────── */}
       <div style={{position:"sticky",top:0,zIndex:50,maxWidth:900,margin:"0 auto"}}>
-      <div style={{background:"linear-gradient(135deg,#EEF4FF 0%,#E8F0FE 60%,#EDF5FF 100%)",borderRadius:"0 0 20px 20px",overflow:"hidden",borderBottom:"1px solid #C7D9F8",borderLeft:"1px solid #C7D9F8",borderRight:"1px solid #C7D9F8",boxShadow:"0 4px 20px rgba(37,99,235,0.1)"}}>
+      <div style={{background:"linear-gradient(135deg,#D6E4F7 0%,#C8D9F0 40%,#D4E5F5 70%,#CBE0F5 100%)",borderRadius:"0 0 20px 20px",overflow:"hidden",borderBottom:"1px solid #A8C4E0",borderLeft:"1px solid #A8C4E0",borderRight:"1px solid #A8C4E0",boxShadow:"0 4px 20px rgba(30,80,150,0.12)"}}>
         <div style={{display:"flex",minHeight:190}}>
 
           {/* Render — izquierda */}
           {proyecto.render?(
-            <div style={{width:200,flexShrink:0,background:"rgba(255,255,255,0.55)",borderRight:"1px solid #D4E4FB",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"20px 16px",gap:8}}>
+            <div style={{width:200,flexShrink:0,background:"rgba(255,255,255,0.5)",borderRight:"1px solid #A8C4E0",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"20px 16px",gap:8}}>
               <img src={proyecto.render} alt={proyecto.nombre}
                 style={{width:"100%",maxHeight:170,objectFit:"contain",filter:"drop-shadow(0 6px 20px rgba(37,99,235,0.2))"}}/>
               <span style={{fontSize:11,color:"#6B7CB8",fontWeight:600,background:"rgba(37,99,235,0.08)",borderRadius:20,padding:"2px 10px"}}>{proyecto.forma}</span>
@@ -1259,10 +1259,10 @@ function VistaProyecto({proyecto,equipoGlobal,onUpdate,onBack,esAdmin}){
           {/* Info — centro */}
           <div style={{flex:1,padding:"16px 20px",display:"flex",flexDirection:"column",gap:10}}>
             <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-              <button onClick={onBack} style={{display:"flex",alignItems:"center",gap:4,background:"rgba(255,255,255,0.8)",border:"1px solid #C7D9F8",cursor:"pointer",color:PAL.teal,fontSize:12,padding:"4px 12px",borderRadius:8,fontWeight:600}}>‹ Volver</button>
-              {proyecto.tipo&&<span style={{fontSize:10,background:"rgba(37,99,235,0.1)",color:"#1D4ED8",borderRadius:20,padding:"2px 9px",fontWeight:600,border:"1px solid #BFDBFE"}}>{proyecto.tipo}</span>}
+              <button onClick={onBack} style={{display:"flex",alignItems:"center",gap:4,background:"rgba(255,255,255,0.8)",border:"1px solid #A8C4E0",cursor:"pointer",color:PAL.teal,fontSize:12,padding:"4px 12px",borderRadius:8,fontWeight:600}}>‹ Volver</button>
+              {proyecto.tipo&&<span style={{fontSize:10,background:"rgba(30,80,150,0.08)",color:"#1D4ED8",borderRadius:20,padding:"2px 9px",fontWeight:600,border:"1px solid #93B8D8"}}>{proyecto.tipo}</span>}
               <Pill label={proyecto.categoria} color={proyecto.color}/>
-              {esAdmin&&<button onClick={()=>setEditProyecto(true)} style={{marginLeft:"auto",background:"rgba(255,255,255,0.8)",border:"1px solid #C7D9F8",cursor:"pointer",color:PAL.gray,fontSize:12,padding:"4px 10px",borderRadius:8}}>⚙️ Editar</button>}
+              {esAdmin&&<button onClick={()=>setEditProyecto(true)} style={{marginLeft:"auto",background:"rgba(255,255,255,0.8)",border:"1px solid #A8C4E0",cursor:"pointer",color:PAL.gray,fontSize:12,padding:"4px 10px",borderRadius:8}}>⚙️ Editar</button>}
             </div>
             <div>
               <div style={{fontSize:26,fontWeight:900,color:PAL.text,letterSpacing:-0.5,lineHeight:1,marginBottom:4}}>{proyecto.nombre}</div>
@@ -1276,23 +1276,26 @@ function VistaProyecto({proyecto,equipoGlobal,onUpdate,onBack,esAdmin}){
             <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:"auto"}}>
               {[
                 {v:`${progreso(proyecto)}%`,l:"avance",c:proyecto.color},
-                {v:`🚀 ${proyecto.fechaLanzamiento}`,l:"lanzamiento",c:PAL.amber},
                 {v:`${proyecto.etapas.filter(e=>e.status==="Completado").length}/${proyecto.etapas.length}`,l:"etapas",c:PAL.teal},
-                {v:`${proyecto.tareas.length}`,l:"tareas",c:PAL.text},
               ].map(m=>(
-                <div key={m.l} style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"7px 14px",border:"1px solid #D4E4FB",textAlign:"center",minWidth:64}}>
-                  <div style={{fontSize:m.l==="lanzamiento"?11:18,fontWeight:800,color:m.c,lineHeight:1}}>{m.v}</div>
+                <div key={m.l} style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"7px 14px",border:"1px solid #C7D9F8",textAlign:"center",minWidth:64}}>
+                  <div style={{fontSize:18,fontWeight:800,color:m.c,lineHeight:1}}>{m.v}</div>
                   <div style={{fontSize:9,color:"#8896C0",marginTop:2}}>{m.l}</div>
                 </div>
               ))}
+              {/* Fecha de lanzamiento destacada */}
+              <div style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"7px 16px",border:"2px solid #3B82F6",textAlign:"center"}}>
+                <div style={{fontSize:15,fontWeight:900,color:"#1D4ED8",lineHeight:1}}>🚀 {proyecto.fechaLanzamiento}</div>
+                <div style={{fontSize:9,color:"#3B82F6",marginTop:3,fontWeight:600,letterSpacing:"0.05em",textTransform:"uppercase"}}>Lanzamiento</div>
+              </div>
             </div>
           </div>
 
           {/* Riesgos — columna derecha del banner */}
-          <div style={{width:220,flexShrink:0,borderLeft:"1px solid #D4E4FB",background:"rgba(255,255,255,0.45)",padding:"14px 14px",display:"flex",flexDirection:"column",gap:6}}>
+          <div style={{width:220,flexShrink:0,borderLeft:"1px solid #A8C4E0",background:"rgba(255,255,255,0.4)",padding:"14px 14px",display:"flex",flexDirection:"column",gap:6}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:2}}>
               <span style={{fontSize:11,fontWeight:700,color:PAL.text}}>⚠️ Riesgos</span>
-              {esAdmin&&<button onClick={()=>setModalRiesgo({})} style={{fontSize:10,background:"rgba(37,99,235,0.1)",color:"#1D4ED8",border:"1px solid #BFDBFE",borderRadius:6,cursor:"pointer",padding:"2px 7px",fontWeight:600}}>+ Agregar</button>}
+              {esAdmin&&<button onClick={()=>setModalRiesgo({})} style={{fontSize:10,background:"rgba(30,80,150,0.08)",color:"#1D4ED8",border:"1px solid #BFDBFE",borderRadius:6,cursor:"pointer",padding:"2px 7px",fontWeight:600}}>+ Agregar</button>}
             </div>
             {!(proyecto.riesgos||[]).length?(
               <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",color:PAL.gray,fontSize:11,textAlign:"center",opacity:0.7}}>Sin riesgos registrados</div>
@@ -1318,7 +1321,7 @@ function VistaProyecto({proyecto,equipoGlobal,onUpdate,onBack,esAdmin}){
             )}
           </div>
         </div>
-        <div style={{height:4,background:"rgba(37,99,235,0.1)"}}>
+        <div style={{height:4,background:"rgba(30,80,150,0.08)"}}>
           <div style={{width:`${progreso(proyecto)}%`,height:"100%",background:proyecto.color,transition:"width 1.2s ease"}}/>
         </div>
       </div>
@@ -1332,7 +1335,6 @@ function VistaProyecto({proyecto,equipoGlobal,onUpdate,onBack,esAdmin}){
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
           <span style={{fontSize:13,fontWeight:700,color:PAL.text}}>Proceso de desarrollo — {progreso(proyecto)}% completado</span>
           <div style={{display:"flex",gap:8,alignItems:"center"}}>
-            <span style={{fontSize:13,fontWeight:700,color:PAL.teal,background:PAL.tealLight,padding:"4px 12px",borderRadius:8,border:`1px solid ${PAL.teal}44`}}>🚀 Lanzamiento: {proyecto.fechaLanzamiento}</span>
             {esAdmin&&<Btn v="secondary" style={{fontSize:11,padding:"3px 10px"}} onClick={()=>setConfigEtapas(true)}>⚙ Editar etapas</Btn>}
             <button onClick={()=>setPipelineFullscreen(true)} title="Ver en pantalla completa"
               style={{padding:"4px 10px",borderRadius:8,border:`1px solid ${PAL.border}`,background:PAL.surface,cursor:"pointer",fontSize:13,color:PAL.gray}}>⛶ Presentar</button>
