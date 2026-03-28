@@ -1225,50 +1225,50 @@ function VistaProyecto({proyecto,equipoGlobal,onUpdate,onBack,esAdmin}){
     <div style={{fontFamily:"'DM Sans','Segoe UI',system-ui,sans-serif",maxWidth:880,margin:"0 auto",padding:"0 0 40px"}}>
 
       {/* ── BANNER ─────────────────────────────────────────────── */}
-      <div style={{background:"linear-gradient(135deg,#0A1628 0%,#1A3A6B 55%,#2563EB 100%)",borderRadius:"0 0 20px 20px",padding:"20px 24px 22px",marginBottom:20,position:"relative",overflow:"hidden"}}>
+      <div style={{background:"linear-gradient(135deg,#EEF4FF 0%,#E8F0FE 50%,#EDF5FF 100%)",borderRadius:"0 0 20px 20px",padding:"20px 24px 22px",marginBottom:20,position:"relative",overflow:"hidden",border:"1px solid #C7D9F8",borderTop:"none"}}>
         {/* Círculos decorativos */}
-        <div style={{position:"absolute",top:-40,right:-40,width:180,height:180,borderRadius:"50%",background:"rgba(255,255,255,0.04)"}}/>
-        <div style={{position:"absolute",bottom:-30,right:60,width:120,height:120,borderRadius:"50%",background:"rgba(255,255,255,0.03)"}}/>
+        <div style={{position:"absolute",top:-40,right:-40,width:180,height:180,borderRadius:"50%",background:"rgba(37,99,235,0.06)"}}/>
+        <div style={{position:"absolute",bottom:-30,right:60,width:120,height:120,borderRadius:"50%",background:"rgba(37,99,235,0.04)"}}/>
 
         <div style={{display:"flex",alignItems:"flex-start",gap:16,position:"relative"}}>
           {/* Render del producto en el banner */}
           {proyecto.render&&(
-            <div style={{width:80,height:80,borderRadius:14,overflow:"hidden",background:"rgba(255,255,255,0.12)",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <div style={{width:80,height:80,borderRadius:14,overflow:"hidden",background:"rgba(255,255,255,0.8)",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",border:"1px solid #C7D9F8"}}>
               <img src={proyecto.render} alt={proyecto.nombre} style={{width:"100%",height:"100%",objectFit:"contain",padding:4}}/>
             </div>
           )}
           {/* Info principal */}
           <div style={{flex:1,minWidth:0}}>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-              <button onClick={onBack} style={{background:"rgba(255,255,255,0.15)",border:"none",cursor:"pointer",color:"#fff",fontSize:16,padding:"3px 10px",borderRadius:8,lineHeight:1,flexShrink:0}}>‹ Volver</button>
-              {proyecto.tipo&&<span style={{fontSize:11,background:"rgba(255,255,255,0.15)",color:"rgba(255,255,255,0.9)",borderRadius:20,padding:"2px 10px",fontWeight:600}}>{proyecto.tipo}</span>}
+              <button onClick={onBack} style={{background:"rgba(255,255,255,0.8)",border:"1px solid #C7D9F8",cursor:"pointer",color:PAL.teal,fontSize:13,padding:"3px 10px",borderRadius:8,lineHeight:1,flexShrink:0,fontWeight:600}}>‹ Volver</button>
+              {proyecto.tipo&&<span style={{fontSize:11,background:"rgba(37,99,235,0.1)",color:"#1D4ED8",borderRadius:20,padding:"2px 10px",fontWeight:600,border:"1px solid #BFDBFE"}}>{proyecto.tipo}</span>}
               <Pill label={proyecto.categoria} color={proyecto.color}/>
             </div>
-            <div style={{fontSize:24,fontWeight:900,color:"#fff",letterSpacing:-0.5,marginBottom:2}}>{proyecto.nombre}</div>
-            <div style={{fontSize:13,color:"rgba(255,255,255,0.7)"}}>{proyecto.cliente} · 🏭 {proyecto.maquilador}, {proyecto.pais}</div>
+            <div style={{fontSize:24,fontWeight:900,color:PAL.text,letterSpacing:-0.5,marginBottom:2}}>{proyecto.nombre}</div>
+            <div style={{fontSize:13,color:PAL.gray}}>{proyecto.cliente} · 🏭 {proyecto.maquilador}, {proyecto.pais}</div>
           </div>
           {/* Métricas rápidas */}
           <div style={{display:"flex",gap:10,flexShrink:0,flexWrap:"wrap",justifyContent:"flex-end"}}>
-            <div style={{background:"rgba(255,255,255,0.12)",borderRadius:10,padding:"8px 14px",textAlign:"center",minWidth:70}}>
-              <div style={{fontSize:22,fontWeight:900,color:"#fff"}}>{progreso(proyecto)}%</div>
-              <div style={{fontSize:10,color:"rgba(255,255,255,0.6)"}}>avance</div>
+            <div style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"8px 14px",textAlign:"center",minWidth:70,border:"1px solid #C7D9F8"}}>
+              <div style={{fontSize:22,fontWeight:900,color:proyecto.color}}>{progreso(proyecto)}%</div>
+              <div style={{fontSize:10,color:PAL.gray}}>avance</div>
             </div>
-            <div style={{background:"rgba(255,255,255,0.12)",borderRadius:10,padding:"8px 14px",textAlign:"center",minWidth:70}}>
+            <div style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"8px 14px",textAlign:"center",minWidth:70,border:"1px solid #C7D9F8"}}>
               <div style={{fontSize:13,fontWeight:700,color:PAL.amber}}>🚀</div>
-              <div style={{fontSize:11,fontWeight:700,color:"#fff"}}>{proyecto.fechaLanzamiento}</div>
-              <div style={{fontSize:10,color:"rgba(255,255,255,0.6)"}}>lanzamiento</div>
+              <div style={{fontSize:11,fontWeight:700,color:PAL.text}}>{proyecto.fechaLanzamiento}</div>
+              <div style={{fontSize:10,color:PAL.gray}}>lanzamiento</div>
             </div>
             <div style={{display:"flex",flexDirection:"column",gap:6,justifyContent:"center"}}>
-              {esAdmin&&<button onClick={()=>setEditProyecto(true)} style={{background:"rgba(255,255,255,0.15)",border:"none",cursor:"pointer",color:"#fff",fontSize:13,padding:"5px 10px",borderRadius:8}}>⚙️ Editar</button>}
+              {esAdmin&&<button onClick={()=>setEditProyecto(true)} style={{background:"rgba(255,255,255,0.85)",border:"1px solid #C7D9F8",cursor:"pointer",color:PAL.gray,fontSize:13,padding:"5px 10px",borderRadius:8}}>⚙️ Editar</button>}
             </div>
           </div>
         </div>
 
         {/* Barra de progreso en el banner */}
-        <div style={{marginTop:16,height:5,background:"rgba(255,255,255,0.15)",borderRadius:99,overflow:"hidden"}}>
-          <div style={{width:`${progreso(proyecto)}%`,height:"100%",background:proyecto.color,borderRadius:99,transition:"width 1s",boxShadow:`0 0 8px ${proyecto.color}`}}/>
+        <div style={{marginTop:16,height:5,background:"rgba(37,99,235,0.12)",borderRadius:99,overflow:"hidden"}}>
+          <div style={{width:`${progreso(proyecto)}%`,height:"100%",background:proyecto.color,borderRadius:99,transition:"width 1s"}}/>
         </div>
-        <div style={{display:"flex",justifyContent:"space-between",marginTop:4,fontSize:10,color:"rgba(255,255,255,0.5)"}}>
+        <div style={{display:"flex",justifyContent:"space-between",marginTop:4,fontSize:10,color:PAL.gray}}>
           <span>{proyecto.etapas.filter(e=>e.status==="Completado").length} de {proyecto.etapas.length} etapas completadas</span>
           <span>{proyecto.tareas.length} tareas · {proyecto.equipo?.length||0} personas</span>
         </div>
