@@ -495,6 +495,7 @@ function EtapasConfigModal({etapas,onSave,onClose}){
 
 // ─── GANTT ─────────────────────────────────────────────────────────────────────
 function GanttTab({proyecto}){
+  const ganttRef=useRef(null);
   const today=new Date();
   const start=new Date(proyecto.fechaInicio||"2026-01-01");
   const end=new Date(proyecto.fechaLanzamiento||"2026-12-31");
@@ -508,38 +509,49 @@ function GanttTab({proyecto}){
     const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});
     const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`Gantt_${proyecto.nombre}.csv`;a.click();URL.revokeObjectURL(url);
   };
+  const scroll=(dir)=>{ if(ganttRef.current) ganttRef.current.scrollLeft+=dir*200; };
   const months=[];let cur=new Date(start);
   while(cur<=end){months.push({year:cur.getFullYear(),month:cur.getMonth(),label:cur.toLocaleDateString("es-MX",{month:"short",year:"numeric"})});cur.setMonth(cur.getMonth()+1);}
+  // min width so gantt is always scrollable
+  const minW=Math.max(700, months.length*90+200);
   return(
     <div>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-        <span style={{fontSize:13,fontWeight:600,color:PAL.text}}>Gantt — {proyecto.nombre}</span>
+        <div style={{display:"flex",gap:6,alignItems:"center"}}>
+          <span style={{fontSize:13,fontWeight:600,color:PAL.text}}>Gantt — {proyecto.nombre}</span>
+          {/* Scroll buttons */}
+          <button onClick={()=>scroll(-1)} style={{width:28,height:28,borderRadius:7,border:`1px solid ${PAL.border}`,background:PAL.surface,cursor:"pointer",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",color:PAL.gray}}>‹</button>
+          <button onClick={()=>scroll(1)} style={{width:28,height:28,borderRadius:7,border:`1px solid ${PAL.border}`,background:PAL.surface,cursor:"pointer",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",color:PAL.gray}}>›</button>
+        </div>
         <Btn v="ghost" onClick={exportCSV} style={{fontSize:12,padding:"5px 14px"}}>📥 Exportar a Excel (CSV)</Btn>
       </div>
-      <div style={{overflowX:"auto"}}>
-        <div style={{display:"flex",marginLeft:180,marginBottom:4}}>
-          {months.map((m,i)=>{const mStart=new Date(m.year,m.month,1);const mEnd=new Date(m.year,m.month+1,0);const ps=Math.max(0,Math.ceil((mStart-start)/86400000)/totalDays*100);const pe=Math.min(100,Math.ceil((mEnd-start)/86400000)/totalDays*100);return <div key={i} style={{flex:`0 0 ${pe-ps}%`,fontSize:10,color:PAL.gray,borderLeft:`1px dashed ${PAL.border}`,paddingLeft:4,overflow:"hidden",whiteSpace:"nowrap"}}>{m.label}</div>;})}
-        </div>
-        <div style={{position:"relative"}}>
-          <div style={{position:"absolute",left:`calc(180px + ${todayPct}%)`,top:0,bottom:0,width:2,background:PAL.red,zIndex:3,opacity:0.6}}/>
-          {proyecto.etapas.map(etapa=>{
-            const s=etapa.fechaInicio?new Date(etapa.fechaInicio):null;const e=etapa.fechaFin?new Date(etapa.fechaFin):null;
-            let sp=0,width=4;
-            if(s&&e){sp=Math.max(0,Math.ceil((s-start)/86400000)/totalDays*100);const ep=Math.min(100,Math.ceil((e-start)/86400000)/totalDays*100);width=Math.max(1,ep-sp);}
-            else if(s){sp=Math.max(0,Math.ceil((s-start)/86400000)/totalDays*100);width=6;}
-            return(
-              <div key={etapa.id} style={{display:"flex",alignItems:"center",marginBottom:7}}>
-                <div style={{width:180,flexShrink:0,fontSize:12,color:PAL.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",paddingRight:8,display:"flex",alignItems:"center",gap:6}}><span>{etapa.icon}</span><span>{etapa.label}</span></div>
-                <div style={{flex:1,height:22,background:"#F3F4F6",borderRadius:5,position:"relative",overflow:"hidden"}}>
-                  {(s||e)&&<div style={{position:"absolute",left:`${sp}%`,width:`${width}%`,height:"100%",background:barColor[etapa.status]||"#D1D5DB",borderRadius:4,opacity:0.85,display:"flex",alignItems:"center",paddingLeft:6,minWidth:6}}><span style={{fontSize:9,color:"#fff",whiteSpace:"nowrap",overflow:"hidden"}}>{etapa.responsable}</span></div>}
+      <div ref={ganttRef} style={{overflowX:"auto",cursor:"grab",userSelect:"none"}}
+        onMouseDown={e=>{const el=ganttRef.current;if(!el)return;el.style.cursor="grabbing";let startX=e.pageX-el.offsetLeft;let scrollLeft=el.scrollLeft;const move=e2=>{el.scrollLeft=scrollLeft-(e2.pageX-el.offsetLeft-startX);};const up=()=>{el.style.cursor="grab";document.removeEventListener("mousemove",move);document.removeEventListener("mouseup",up);};document.addEventListener("mousemove",move);document.addEventListener("mouseup",up);}}>
+        <div style={{minWidth:minW}}>
+          <div style={{display:"flex",marginLeft:180,marginBottom:4}}>
+            {months.map((m,i)=>{const mStart=new Date(m.year,m.month,1);const mEnd=new Date(m.year,m.month+1,0);const ps=Math.max(0,Math.ceil((mStart-start)/86400000)/totalDays*100);const pe=Math.min(100,Math.ceil((mEnd-start)/86400000)/totalDays*100);return <div key={i} style={{flex:`0 0 ${pe-ps}%`,fontSize:10,color:PAL.gray,borderLeft:`1px dashed ${PAL.border}`,paddingLeft:4,overflow:"hidden",whiteSpace:"nowrap"}}>{m.label}</div>;})}
+          </div>
+          <div style={{position:"relative"}}>
+            <div style={{position:"absolute",left:`calc(180px + ${todayPct}%)`,top:0,bottom:0,width:2,background:PAL.red,zIndex:3,opacity:0.6}}/>
+            {proyecto.etapas.map(etapa=>{
+              const s=etapa.fechaInicio?new Date(etapa.fechaInicio):null;const e=etapa.fechaFin?new Date(etapa.fechaFin):null;
+              let sp=0,width=4;
+              if(s&&e){sp=Math.max(0,Math.ceil((s-start)/86400000)/totalDays*100);const ep=Math.min(100,Math.ceil((e-start)/86400000)/totalDays*100);width=Math.max(1,ep-sp);}
+              else if(s){sp=Math.max(0,Math.ceil((s-start)/86400000)/totalDays*100);width=6;}
+              return(
+                <div key={etapa.id} style={{display:"flex",alignItems:"center",marginBottom:7}}>
+                  <div style={{width:180,flexShrink:0,fontSize:12,color:PAL.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",paddingRight:8,display:"flex",alignItems:"center",gap:6}}><span>{etapa.icon}</span><span>{etapa.label}</span></div>
+                  <div style={{flex:1,height:22,background:"#F3F4F6",borderRadius:5,position:"relative",overflow:"hidden"}}>
+                    {(s||e)&&<div style={{position:"absolute",left:`${sp}%`,width:`${width}%`,height:"100%",background:barColor[etapa.status]||"#D1D5DB",borderRadius:4,opacity:0.85,display:"flex",alignItems:"center",paddingLeft:6,minWidth:6}}><span style={{fontSize:9,color:"#fff",whiteSpace:"nowrap",overflow:"hidden"}}>{etapa.responsable}</span></div>}
+                  </div>
+                  <Badge label={etapa.status}/>
                 </div>
-                <Badge label={etapa.status}/>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </div>
-      <div style={{marginTop:14,padding:12,background:PAL.grayLight,borderRadius:10,fontSize:12,color:PAL.gray}}>💡 Las barras aparecen cuando asignas fechas inicio y fin en cada etapa. Exporta a CSV para abrir en Excel.</div>
+      <div style={{marginTop:14,padding:12,background:PAL.grayLight,borderRadius:10,fontSize:12,color:PAL.gray}}>💡 Usa los botones ‹ › o arrastra el diagrama para navegar. Exporta a CSV para abrir en Excel.</div>
     </div>
   );
 }
@@ -1244,7 +1256,7 @@ function VistaProyecto({proyecto,equipoGlobal,onUpdate,onBack,esAdmin}){
             <div style={{width:6,flexShrink:0,background:proyecto.color}}/>
           )}
 
-          {/* Info — derecha */}
+          {/* Info — centro */}
           <div style={{flex:1,padding:"16px 20px",display:"flex",flexDirection:"column",gap:10}}>
             <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
               <button onClick={onBack} style={{display:"flex",alignItems:"center",gap:4,background:"rgba(255,255,255,0.8)",border:"1px solid #C7D9F8",cursor:"pointer",color:PAL.teal,fontSize:12,padding:"4px 12px",borderRadius:8,fontWeight:600}}>‹ Volver</button>
@@ -1275,6 +1287,36 @@ function VistaProyecto({proyecto,equipoGlobal,onUpdate,onBack,esAdmin}){
               ))}
             </div>
           </div>
+
+          {/* Riesgos — columna derecha del banner */}
+          <div style={{width:220,flexShrink:0,borderLeft:"1px solid #D4E4FB",background:"rgba(255,255,255,0.45)",padding:"14px 14px",display:"flex",flexDirection:"column",gap:6}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:2}}>
+              <span style={{fontSize:11,fontWeight:700,color:PAL.text}}>⚠️ Riesgos</span>
+              {esAdmin&&<button onClick={()=>setModalRiesgo({})} style={{fontSize:10,background:"rgba(37,99,235,0.1)",color:"#1D4ED8",border:"1px solid #BFDBFE",borderRadius:6,cursor:"pointer",padding:"2px 7px",fontWeight:600}}>+ Agregar</button>}
+            </div>
+            {!(proyecto.riesgos||[]).length?(
+              <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",color:PAL.gray,fontSize:11,textAlign:"center",opacity:0.7}}>Sin riesgos registrados</div>
+            ):(
+              <div style={{display:"flex",flexDirection:"column",gap:5,overflowY:"auto",flex:1}}>
+                {(proyecto.riesgos||[]).map(r=>{
+                  const colorNivel={Alto:PAL.red,Medio:PAL.amber,Bajo:PAL.green}[r.nivel]||PAL.gray;
+                  return(
+                    <div key={r.id} style={{padding:"6px 9px",background:"rgba(255,255,255,0.8)",borderRadius:8,border:`1px solid ${colorNivel}33`,display:"flex",gap:7,alignItems:"flex-start"}}>
+                      <div style={{width:8,height:8,borderRadius:"50%",background:colorNivel,flexShrink:0,marginTop:3}}/>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:11,fontWeight:600,color:PAL.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.descripcion}</div>
+                        <div style={{display:"flex",gap:5,marginTop:2,alignItems:"center"}}>
+                          <span style={{fontSize:9,background:colorNivel+"22",color:colorNivel,borderRadius:4,padding:"1px 5px",fontWeight:600}}>{r.nivel}</span>
+                          <span style={{fontSize:9,color:PAL.gray}}>{r.estado||"Activo"}</span>
+                        </div>
+                      </div>
+                      {esAdmin&&<button onClick={()=>setModalRiesgo(r)} style={{background:"none",border:"none",cursor:"pointer",fontSize:11,color:PAL.gray,flexShrink:0,padding:0}}>✏️</button>}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
         <div style={{height:4,background:"rgba(37,99,235,0.1)"}}>
           <div style={{width:`${progreso(proyecto)}%`,height:"100%",background:proyecto.color,transition:"width 1.2s ease"}}/>
@@ -1304,48 +1346,6 @@ function VistaProyecto({proyecto,equipoGlobal,onUpdate,onBack,esAdmin}){
         <FullscreenPipeline proyecto={proyecto} onClose={()=>setPipelineFullscreen(false)}/>,
         document.body
       )}
-
-      {/* Panel de riesgos */}
-      <div style={{marginBottom:14}}>
-        <div style={{background:PAL.surface,border:`1px solid ${PAL.border}`,borderRadius:14,padding:"14px 16px"}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-            <span style={{fontSize:13,fontWeight:700,color:PAL.text}}>⚠️ Riesgos del proyecto</span>
-            {esAdmin&&<Btn style={{fontSize:11,padding:"4px 10px"}} onClick={()=>setModalRiesgo({})}>+ Riesgo</Btn>}
-          </div>
-          {!(proyecto.riesgos||[]).length?(
-            <div style={{textAlign:"center",padding:"14px 0",color:PAL.gray,fontSize:13}}>
-              {esAdmin?"Sin riesgos registrados. Haz clic en + Riesgo para agregar.":"Sin riesgos registrados."}
-            </div>
-          ):(
-            <div style={{display:"flex",flexDirection:"column",gap:7}}>
-              {(proyecto.riesgos||[]).map(r=>{
-                const colorNivel={Alto:PAL.red,Medio:PAL.amber,Bajo:PAL.green}[r.nivel]||PAL.gray;
-                const bgNivel={Alto:PAL.redLight,Medio:PAL.amberLight,Bajo:PAL.greenLight}[r.nivel]||PAL.grayLight;
-                return(
-                  <div key={r.id} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"9px 12px",background:bgNivel,borderRadius:9,border:`1px solid ${colorNivel}33`}}>
-                    <div style={{width:10,height:10,borderRadius:"50%",background:colorNivel,flexShrink:0,marginTop:3}}/>
-                    <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:13,fontWeight:600,color:PAL.text}}>{r.descripcion}</div>
-                      <div style={{fontSize:11,color:PAL.gray,marginTop:2,display:"flex",gap:8,flexWrap:"wrap"}}>
-                        {r.impacto&&<span>📌 {r.impacto}</span>}
-                        {r.mitigacion&&<span>🛡️ {r.mitigacion}</span>}
-                      </div>
-                    </div>
-                    <div style={{display:"flex",gap:5,alignItems:"center",flexShrink:0}}>
-                      <span style={{fontSize:11,background:colorNivel+"22",color:colorNivel,borderRadius:5,padding:"2px 7px",fontWeight:600}}>{r.nivel}</span>
-                      <Badge label={r.estado||"Activo"}/>
-                      {esAdmin&&<>
-                        <button onClick={()=>setModalRiesgo(r)} style={{background:"none",border:"none",cursor:"pointer",fontSize:13,padding:"1px 3px"}}>✏️</button>
-                        <button onClick={()=>delRiesgo(r.id)} style={{background:"none",border:"none",cursor:"pointer",fontSize:13,padding:"1px 3px",color:PAL.red}}>🗑️</button>
-                      </>}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
 
       <div style={{display:"flex",gap:0,borderBottom:`2px solid ${PAL.border}`,marginBottom:18,overflowX:"auto"}}>
         {TABS_PROY.map(t=>(<button key={t} onClick={()=>setTab(t)} style={{padding:"9px 14px",border:"none",background:"none",cursor:"pointer",fontSize:13,color:tab===t?PAL.teal:PAL.gray,fontWeight:tab===t?700:500,borderBottom:`2px solid ${tab===t?PAL.teal:"transparent"}`,marginBottom:-2,whiteSpace:"nowrap"}}>{t}</button>))}
