@@ -101,7 +101,7 @@ const dateColor = (dateStr, status) => {
   const d = new Date(dateStr+"T12:00:00");
   if(status==="Completado") return {c:PAL.green, bg:PAL.greenLight};         // verde: cumplido
   if(status==="En progreso") return {c:"#1D4ED8", bg:"#DBEAFE"};             // azul: en proceso
-  if(status==="Pendiente" && d > today) return {c:"#1D4ED8", bg:"#DBEAFE"}; // azul: aún no inicia
+  if(status==="Pendiente" && d > today) return {c:PAL.gray, bg:PAL.grayLight}; // gris: aún no inicia
   if(d < today) return {c:PAL.red, bg:PAL.redLight};                         // rojo: vencido
   return {c:PAL.gray, bg:PAL.grayLight};
 };
@@ -1568,7 +1568,7 @@ function App(){
             <div>
               <div style={{fontSize:11,letterSpacing:"0.14em",textTransform:"uppercase",color:"rgba(255,255,255,0.7)",fontWeight:600,marginBottom:5}}>Gestión de proyectos</div>
               <div style={{fontSize:28,fontWeight:900,color:"#fff",letterSpacing:-0.5}}>Genomma Lab</div>
-              <div style={{fontSize:14,color:"rgba(255,255,255,0.75)",marginTop:3}}>OTC · Cosméticos · Manufactura</div>
+              <div style={{fontSize:14,color:"rgba(255,255,255,0.75)",marginTop:3}}>OTC · Cosméticos · Suerox</div>
             </div>
             <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
               <div style={{display:"flex",alignItems:"center",gap:8,padding:"6px 12px",background:"rgba(255,255,255,0.15)",borderRadius:20,fontSize:13,backdropFilter:"blur(4px)"}}>
