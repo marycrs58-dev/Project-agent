@@ -310,7 +310,7 @@ function Pipeline({proyecto,onEtapaClick,grande=false}){
           const done=etapa.status==="Completado";
           const isActual=etapa.status==="En progreso";
           const isRetrasado=etapa.status==="Retrasado";
-          const bg=done?PAL.teal:isActual?"#2563EB":isRetrasado?PAL.red:"#D1D5DB";
+          const bg=done?PAL.teal:isActual?"#BFDBFE":isRetrasado?PAL.red:"#D1D5DB";
           return(
             <div key={etapa.id} style={{display:"flex",alignItems:"center"}}>
               <div onClick={()=>onEtapaClick&&onEtapaClick(etapa,i)}
@@ -320,8 +320,8 @@ function Pipeline({proyecto,onEtapaClick,grande=false}){
                   width:sz,height:sz,borderRadius:"50%",background:bg,
                   display:"flex",alignItems:"center",justifyContent:"center",
                   fontSize:iconSz,flexShrink:0,
-                  border:isActual?`${grande?4:3}px solid ${proyecto.color}`:isRetrasado?`${grande?4:3}px solid ${PAL.red}`:"none",
-                  boxShadow:isActual?`0 0 0 ${grande?5:3}px ${proyecto.color}33`:isRetrasado?`0 0 0 ${grande?5:3}px ${PAL.red}44`:`0 ${grande?3:1}px ${grande?8:3}px rgba(0,0,0,0.12)`,
+                  border:isActual?`${grande?4:3}px solid #3B82F6`:isRetrasado?`${grande?4:3}px solid ${PAL.red}`:"none",
+                  boxShadow:isActual?`0 0 0 ${grande?5:3}px #93C5FD55`:isRetrasado?`0 0 0 ${grande?5:3}px ${PAL.red}44`:`0 ${grande?3:1}px ${grande?8:3}px rgba(0,0,0,0.12)`,
                   transition:"transform 0.15s",
                 }}>
                   {done
@@ -333,7 +333,7 @@ function Pipeline({proyecto,onEtapaClick,grande=false}){
                 {/* Label */}
                 <span style={{
                   fontSize:labelSz,
-                  color:done?PAL.teal:isActual?"#2563EB":isRetrasado?PAL.red:PAL.gray,
+                  color:done?PAL.teal:isActual?"#1D4ED8":isRetrasado?PAL.red:PAL.gray,
                   fontWeight:isActual||isRetrasado?700:done?600:400,
                   maxWidth:labelW,textAlign:"center",lineHeight:1.3,
                 }}>
@@ -369,9 +369,8 @@ function Pipeline({proyecto,onEtapaClick,grande=false}){
           );
         })}
       </div>
-      <div style={{display:"flex",gap:16,marginTop:grande?10:6,fontSize:grande?11:10,color:PAL.gray}}>
-        <span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:grande?10:8,height:grande?10:8,borderRadius:"50%",background:PAL.red,display:"inline-block"}}/>Retrasado</span>
-      </div>
+      <div style={{marginTop:grande?10:6}}/>
+
     </div>
   );
 }
