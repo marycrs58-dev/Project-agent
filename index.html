@@ -47,6 +47,7 @@ const EQUIPO_INICIAL = [
   {id:5,nombre:"Eder Fabián Estudillo",rol:"Diseño"},
 ];
 let MAQUILADORES = [{nombre:"MMN",pais:"México"},{nombre:"Procaps",pais:"Colombia"},{nombre:"Absara",pais:"México"}];
+let TIPOS_PROYECTO = ["Lanzamiento nuevo","Extensión de línea","Reformulación","Cambio de empaque","Proyecto especial"];
 const CATEGORIAS = ["OTC","Cosmético","Ambos"];
 const FORMAS = ["Tableta","Cápsula","Sachet","Jarabe","Crema","Shampoo","Loción","Gel","Spray","Otro"];
 const PRIORIDADES = ["Alta","Media","Baja"];
@@ -93,16 +94,16 @@ const diasR = f => Math.ceil((new Date(f)-new Date())/86400000);
 const fmtDate = d => { if(!d)return""; const dt=new Date(d+"T12:00:00"); return dt.toLocaleDateString("es-MX",{day:"2-digit",month:"short"}); };
 
 const PROYECTOS_EJEMPLO = [
-  {id:1,nombre:"Genocurol",categoria:"OTC",forma:"Tableta",cliente:"Genomma Lab",maquilador:"MMN",pais:"México",color:"#0D7377",responsable:"Marycarmen Reséndiz",fechaInicio:"2026-01-10",fechaLanzamiento:"2026-08-30",descripcion:"Analgésico/antiinflamatorio OTC.",equipo:EQUIPO_INICIAL,
+  {id:1,nombre:"Genocurol",tipo:"Lanzamiento nuevo",categoria:"OTC",forma:"Tableta",cliente:"Genomma Lab",maquilador:"MMN",pais:"México",color:"#0D7377",responsable:"Marycarmen Reséndiz",fechaInicio:"2026-01-10",fechaLanzamiento:"2026-08-30",descripcion:"Analgésico/antiinflamatorio OTC.",equipo:EQUIPO_INICIAL,
     etapas:ETAPAS_DEF.map((e,i)=>({...e,status:i<5?"Completado":i===5?"En progreso":"Pendiente",fechaInicio:i===0?"2026-01-10":i===1?"2026-01-20":i===2?"2026-02-01":i===3?"2026-02-15":i===4?"2026-03-01":i===5?"2026-03-15":"",fechaFin:i===0?"2026-01-18":i===1?"2026-01-28":i===2?"2026-02-10":i===3?"2026-02-28":i===4?"2026-03-10":"",responsable:i<3?"Anabel Zárate":"Marycarmen Reséndiz",notas:"",entregables:(ENTREGABLES_DEF[e.id]||[]).map(d=>({id:uid(),desc:d,done:i<5}))})),
     tareas:[{id:1,nombre:"Reporte estabilidad 3 meses",responsable:"Marycarmen Reséndiz",fechaLimite:"2026-04-15",status:"En progreso",prioridad:"Alta",notas:"40°C/75%HR"}],minutas:[]},
-  {id:2,nombre:"Genoprashot",categoria:"OTC",forma:"Sachet",cliente:"Genomma Lab",maquilador:"Procaps",pais:"Colombia",color:"#7B3FA0",responsable:"Marycarmen Reséndiz",fechaInicio:"2025-11-01",fechaLanzamiento:"2026-06-15",descripcion:"Solución oral en sachet.",equipo:EQUIPO_INICIAL,
+  {id:2,nombre:"Genoprashot",tipo:"Lanzamiento nuevo",categoria:"OTC",forma:"Sachet",cliente:"Genomma Lab",maquilador:"Procaps",pais:"Colombia",color:"#7B3FA0",responsable:"Marycarmen Reséndiz",fechaInicio:"2025-11-01",fechaLanzamiento:"2026-06-15",descripcion:"Solución oral en sachet.",equipo:EQUIPO_INICIAL,
     etapas:ETAPAS_DEF.map((e,i)=>({...e,status:i<7?"Completado":i===7?"En progreso":"Pendiente",fechaInicio:"",fechaFin:"",responsable:"",notas:"",entregables:(ENTREGABLES_DEF[e.id]||[]).map(d=>({id:uid(),desc:d,done:i<7}))})),
     tareas:[{id:1,nombre:"Aprobación arte Regulatorios",responsable:"Anabel Zárate",fechaLimite:"2026-03-28",status:"En progreso",prioridad:"Alta",notas:""}],minutas:[]},
-  {id:3,nombre:"Tukol Sachet",categoria:"OTC",forma:"Sachet",cliente:"Genomma Lab",maquilador:"Absara",pais:"México",color:"#C8841A",responsable:"Marycarmen Reséndiz",fechaInicio:"2026-02-01",fechaLanzamiento:"2026-10-01",descripcion:"Extensión de línea Tukol.",equipo:EQUIPO_INICIAL,
+  {id:3,nombre:"Tukol Sachet",tipo:"Extensión de línea",categoria:"OTC",forma:"Sachet",cliente:"Genomma Lab",maquilador:"Absara",pais:"México",color:"#C8841A",responsable:"Marycarmen Reséndiz",fechaInicio:"2026-02-01",fechaLanzamiento:"2026-10-01",descripcion:"Extensión de línea Tukol.",equipo:EQUIPO_INICIAL,
     etapas:ETAPAS_DEF.map((e,i)=>({...e,status:i<2?"Completado":"Pendiente",fechaInicio:"",fechaFin:"",responsable:"",notas:"",entregables:(ENTREGABLES_DEF[e.id]||[]).map(d=>({id:uid(),desc:d,done:i<2}))})),
     tareas:[{id:1,nombre:"Cotización a Absara",responsable:"Marycarmen Reséndiz",fechaLimite:"2026-04-01",status:"Pendiente",prioridad:"Alta",notas:""}],minutas:[]},
-  {id:4,nombre:"Medicasp",categoria:"Cosmético",forma:"Shampoo",cliente:"Genomma Lab",maquilador:"MMN",pais:"México",color:"#1E7E4E",responsable:"Marycarmen Reséndiz",fechaInicio:"2025-09-15",fechaLanzamiento:"2026-05-01",descripcion:"Shampoo anticaspa con zinc piritionato.",equipo:EQUIPO_INICIAL,
+  {id:4,nombre:"Medicasp",tipo:"Reformulación",categoria:"Cosmético",forma:"Shampoo",cliente:"Genomma Lab",maquilador:"MMN",pais:"México",color:"#1E7E4E",responsable:"Marycarmen Reséndiz",fechaInicio:"2025-09-15",fechaLanzamiento:"2026-05-01",descripcion:"Shampoo anticaspa con zinc piritionato.",equipo:EQUIPO_INICIAL,
     etapas:ETAPAS_DEF.map((e,i)=>({...e,status:i<10?"Completado":i===10?"En progreso":"Pendiente",fechaInicio:"",fechaFin:"",responsable:"",notas:"",entregables:(ENTREGABLES_DEF[e.id]||[]).map(d=>({id:uid(),desc:d,done:i<10}))})),
     tareas:[{id:1,nombre:"Completar BOM en SAP",responsable:"Mario Alberto García",fechaLimite:"2026-03-31",status:"En progreso",prioridad:"Alta",notas:"Faltan 3 materiales"}],minutas:[]},
 ];
@@ -585,7 +586,7 @@ function TeamsModal({tareas,onClose}){
 // ─── MODAL PROYECTO ────────────────────────────────────────────────────────────
 function ProyectoModal({proyecto,equipoGlobal,maquiladoresProp,onSave,onClose}){
   const maqList = maquiladoresProp||MAQUILADORES;
-  const blank={nombre:"",categoria:"OTC",forma:"Tableta",cliente:"",maquilador:"MMN",pais:"México",responsable:"Marycarmen Reséndiz",fechaInicio:"",fechaLanzamiento:"",descripcion:"",color:"#0D7377"};
+  const blank={nombre:"",tipo:"",categoria:"OTC",forma:"Tableta",cliente:"",maquilador:"MMN",pais:"México",responsable:"Marycarmen Reséndiz",fechaInicio:"",fechaLanzamiento:"",descripcion:"",color:"#0D7377"};
   const [form,setForm]=useState(proyecto?{...proyecto}:blank);
   const [equipoCheck,setEquipoCheck]=useState(equipoGlobal.map(e=>proyecto?proyecto.equipo.some(pe=>pe.id===e.id):true));
   const set=(k,v)=>setForm(f=>({...f,[k]:v}));
@@ -603,6 +604,12 @@ function ProyectoModal({proyecto,equipoGlobal,maquiladoresProp,onSave,onClose}){
     <div style={{fontSize:16,fontWeight:700,color:PAL.text,marginBottom:20}}>{proyecto?"Editar proyecto":"Nuevo proyecto"}</div>
     <div style={{display:"flex",flexDirection:"column",gap:13}}>
       <Field label="Nombre del producto *"><Inp value={form.nombre} onChange={e=>set("nombre",e.target.value)} placeholder="Ej. Genocurol, Tukol Sachet…"/></Field>
+      <Field label="Tipo de proyecto">
+        <Sel value={form.tipo||""} onChange={e=>set("tipo",e.target.value)}>
+          <option value="">— Seleccionar tipo —</option>
+          {(maqList?TIPOS_PROYECTO:TIPOS_PROYECTO).map(t=><option key={t}>{t}</option>)}
+        </Sel>
+      </Field>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
         <Field label="Categoría"><Sel value={form.categoria} onChange={e=>set("categoria",e.target.value)}>{CATEGORIAS.map(c=><option key={c}>{c}</option>)}</Sel></Field>
         <Field label="Forma farmacéutica"><Sel value={form.forma} onChange={e=>set("forma",e.target.value)}>{FORMAS.map(f=><option key={f}>{f}</option>)}</Sel></Field>
@@ -675,7 +682,7 @@ function TarjetaProyecto({proyecto,onClick,onDuplicate,onDelete,esAdmin}){
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
             <div style={{flex:1}}>
               <div style={{fontSize:15,fontWeight:700,color:PAL.text,marginBottom:3}}>{proyecto.nombre}</div>
-              <div style={{display:"flex",gap:6,flexWrap:"wrap"}}><Pill label={proyecto.categoria} color={proyecto.color}/><Pill label={proyecto.forma} color={PAL.gray}/><span style={{fontSize:11,color:PAL.gray}}>🏭 {proyecto.maquilador} · {proyecto.pais}</span></div>
+              <div style={{display:"flex",gap:6,flexWrap:"wrap"}}><Pill label={proyecto.categoria} color={proyecto.color}/><Pill label={proyecto.forma} color={PAL.gray}/>{proyecto.tipo&&<Pill label={proyecto.tipo} color={"#5B21B6"}/>}<span style={{fontSize:11,color:PAL.gray}}>🏭 {proyecto.maquilador} · {proyecto.pais}</span></div>
             </div>
             {vencidas>0&&<span style={{background:PAL.redLight,color:PAL.red,borderRadius:20,padding:"2px 9px",fontSize:11,fontWeight:600}}>⚠️ {vencidas}</span>}
           </div>
@@ -732,6 +739,116 @@ function ResponsablesModal({equipo,onSave,onClose}){
   </div></Overlay>);
 }
 
+// ─── MODAL TIPOS DE PROYECTO ──────────────────────────────────────────────────
+function TiposProyectoModal({tipos,onSave,onClose}){
+  const [lista,setLista]=useState([...tipos]);
+  const [nuevo,setNuevo]=useState("");
+  const add=()=>{if(!nuevo.trim()||lista.includes(nuevo.trim()))return;setLista(l=>[...l,nuevo.trim()]);setNuevo("");};
+  return(<Overlay><div style={{background:PAL.surface,borderRadius:16,padding:24,width:"92%",maxWidth:440,maxHeight:"85vh",overflowY:"auto"}}>
+    <div style={{fontSize:16,fontWeight:700,color:PAL.text,marginBottom:4}}>Tipos de proyecto</div>
+    <div style={{fontSize:13,color:PAL.gray,marginBottom:16}}>Estos tipos aparecen en cada tarjeta y en los filtros de la pantalla principal.</div>
+    <div style={{display:"flex",flexDirection:"column",gap:7,marginBottom:16}}>
+      {lista.map((t,i)=>(
+        <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",background:PAL.grayLight,borderRadius:8}}>
+          <span style={{fontSize:16}}>🏷️</span>
+          <span style={{flex:1,fontSize:13,fontWeight:500,color:PAL.text}}>{t}</span>
+          <button onClick={()=>setLista(l=>l.filter((_,j)=>j!==i))} style={{background:"none",border:"none",cursor:"pointer",color:PAL.red,fontSize:15}}>✕</button>
+        </div>
+      ))}
+    </div>
+    <div style={{background:PAL.tealLight,borderRadius:10,padding:14,marginBottom:16}}>
+      <div style={{fontSize:12,fontWeight:600,color:PAL.teal,marginBottom:10}}>Agregar tipo</div>
+      <div style={{display:"flex",gap:8}}>
+        <Inp value={nuevo} onChange={e=>setNuevo(e.target.value)} placeholder="Ej. Proyecto piloto" onKeyDown={e=>e.key==="Enter"&&add()} style={{flex:1}}/>
+        <Btn onClick={add} style={{padding:"8px 14px"}}>+</Btn>
+      </div>
+    </div>
+    <div style={{display:"flex",gap:10}}>
+      <Btn v="secondary" style={{flex:1}} onClick={onClose}>Cancelar</Btn>
+      <Btn style={{flex:1}} onClick={()=>{onSave(lista);onClose();}}>Guardar</Btn>
+    </div>
+  </div></Overlay>);
+}
+
+// ─── PESTAÑA ARCHIVOS ─────────────────────────────────────────────────────────
+function ArchivosTab({proyecto}){
+  // Recopilar todos los archivos de todas las etapas
+  const todos=[];
+  proyecto.etapas.forEach(etapa=>{
+    (etapa.archivos||[]).forEach(arch=>{
+      todos.push({...arch,etapa:etapa.label,etapaIcon:etapa.icon});
+    });
+  });
+
+  const imgTipos=["image/jpeg","image/png","image/gif","image/webp","image/svg+xml"];
+  const iconPorTipo=(tipo)=>{
+    if(!tipo)return"📎";
+    if(tipo.startsWith("image/"))return"🖼️";
+    if(tipo.includes("pdf"))return"📄";
+    if(tipo.includes("sheet")||tipo.includes("excel")||tipo.includes("csv"))return"📊";
+    if(tipo.includes("word")||tipo.includes("document"))return"📝";
+    if(tipo.includes("presentation")||tipo.includes("powerpoint"))return"📋";
+    return"📎";
+  };
+
+  if(todos.length===0) return(
+    <div style={{textAlign:"center",padding:"48px 0",color:PAL.gray}}>
+      <div style={{fontSize:40,marginBottom:12}}>📂</div>
+      <div style={{fontSize:15,fontWeight:600,color:PAL.text,marginBottom:6}}>Sin archivos adjuntos</div>
+      <div style={{fontSize:13}}>Adjunta archivos desde cada etapa del proceso haciendo clic en ella.</div>
+    </div>
+  );
+
+  const imagenes=todos.filter(a=>imgTipos.includes(a.tipo));
+  const otros=todos.filter(a=>!imgTipos.includes(a.tipo));
+
+  return(
+    <div>
+      <div style={{fontSize:13,color:PAL.gray,marginBottom:16}}>
+        {todos.length} archivo(s) adjunto(s) en {proyecto.etapas.filter(e=>(e.archivos||[]).length>0).length} etapa(s)
+      </div>
+
+      {imagenes.length>0&&(
+        <div style={{marginBottom:24}}>
+          <div style={{fontSize:13,fontWeight:700,color:PAL.text,marginBottom:12}}>🖼️ Imágenes ({imagenes.length})</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:10}}>
+            {imagenes.map((arch,i)=>(
+              <div key={i} style={{background:PAL.surface,border:`1px solid ${PAL.border}`,borderRadius:10,overflow:"hidden"}}>
+                <div style={{height:120,background:"#f8f8f8",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
+                  <img src={arch.url} alt={arch.nombre} style={{width:"100%",height:"100%",objectFit:"contain"}}/>
+                </div>
+                <div style={{padding:"7px 10px"}}>
+                  <div style={{fontSize:11,fontWeight:600,color:PAL.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{arch.nombre}</div>
+                  <div style={{fontSize:10,color:PAL.gray,marginTop:2}}>{arch.etapaIcon} {arch.etapa}</div>
+                  <a href={arch.url} download={arch.nombre} style={{display:"block",marginTop:6,fontSize:11,color:PAL.teal,textDecoration:"none",fontWeight:500}}>⬇ Descargar</a>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {otros.length>0&&(
+        <div>
+          <div style={{fontSize:13,fontWeight:700,color:PAL.text,marginBottom:12}}>📎 Documentos ({otros.length})</div>
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {otros.map((arch,i)=>(
+              <div key={i} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",background:PAL.surface,border:`1px solid ${PAL.border}`,borderRadius:10}}>
+                <span style={{fontSize:24,flexShrink:0}}>{iconPorTipo(arch.tipo)}</span>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:13,fontWeight:600,color:PAL.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{arch.nombre}</div>
+                  <div style={{fontSize:11,color:PAL.gray,marginTop:2}}>{arch.etapaIcon} {arch.etapa}</div>
+                </div>
+                <a href={arch.url} download={arch.nombre} style={{flexShrink:0,padding:"5px 12px",borderRadius:7,background:PAL.tealLight,color:PAL.teal,textDecoration:"none",fontSize:12,fontWeight:500}}>⬇ Descargar</a>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── MODAL MAQUILADORES ───────────────────────────────────────────────────────
 function MaquiladoresModal({maquiladores,onSave,onClose}){
   const [lista,setLista]=useState(maquiladores.map(m=>({...m})));
@@ -762,7 +879,7 @@ function MaquiladoresModal({maquiladores,onSave,onClose}){
 }
 
 // ─── VISTA PROYECTO ───────────────────────────────────────────────────────────
-const TABS_PROY=["Proceso","Gantt","Calendario","Tareas","Equipo","Minutas"];
+const TABS_PROY=["Proceso","Gantt","Calendario","Tareas","Equipo","Minutas","Archivos"];
 
 function VistaProyecto({proyecto,equipoGlobal,onUpdate,onBack,esAdmin}){
   const [tab,setTab]=useState("Proceso");
@@ -892,6 +1009,8 @@ function VistaProyecto({proyecto,equipoGlobal,onUpdate,onBack,esAdmin}){
         </div>
       )}
 
+      {tab==="Archivos"&&<ArchivosTab proyecto={proyecto}/>}
+
       {modalEtapa&&<EtapaModal etapa={modalEtapa.etapa} idx={modalEtapa.idx} proyecto={proyecto} onSave={saveEtapa} onClose={()=>setModalEtapa(null)}/>}
       {modalTarea!==null&&<TareaModal tarea={modalTarea?.id?modalTarea:null} equipo={proyecto.equipo} onSave={saveTarea} onClose={()=>setModalTarea(null)}/>}
       {modalMinuta&&<MinutaModal proyecto={proyecto} onSave={saveMinuta} onClose={()=>setModalMinuta(false)}/>}
@@ -914,11 +1033,15 @@ function App(){
   const [modalResponsables,setModalResponsables]=useState(false);
   const [modalUsuarios,setModalUsuarios]=useState(false);
   const [modalMaquiladores,setModalMaquiladores]=useState(false);
+  const [modalTipos,setModalTipos]=useState(false);
   const [maquiladoresList,setMaquiladoresList]=useState(MAQUILADORES);
+  const [tiposList,setTiposList]=useState(TIPOS_PROYECTO);
   const [confirmDelProy,setConfirmDelProy]=useState(null);
   const [busqueda,setBusqueda]=useState("");
   const [filtroMaq,setFiltroMaq]=useState("Todos");
   const [filtrocat,setFiltrocat]=useState("Todos");
+  const [filtroTipo,setFiltroTipo]=useState("Todos");
+  const [filtroDueno,setFiltroDueno]=useState("Todos");
   const [loading,setLoading]=useState(true);
   const [saving,setSaving]=useState(false);
 
@@ -984,6 +1107,15 @@ function App(){
     if(eq&&eq.length>0) await sb.from("equipo_global").update({data:newData}).eq("id",eq[0].id);
     else await sb.from("equipo_global").insert({data:newData});
   };
+
+  const saveTipos=async(lista)=>{
+    TIPOS_PROYECTO=lista;
+    setTiposList(lista);
+    const {data:eq}=await sb.from("equipo_global").select("id,data").limit(1);
+    const newData={...(eq&&eq[0]?eq[0].data:{}),tiposProyecto:lista};
+    if(eq&&eq.length>0) await sb.from("equipo_global").update({data:newData}).eq("id",eq[0].id);
+    else await sb.from("equipo_global").insert({data:newData});
+  };
   const saveEquipo=async(equipo)=>{
     setEquipoGlobal(equipo);
     const {data:eq}=await sb.from("equipo_global").select("id").limit(1);
@@ -1003,9 +1135,14 @@ function App(){
     </div>);
   }
 
+  const duenos=[...new Set(proyectos.map(p=>p.responsable).filter(Boolean))];
   const filtrados=proyectos.filter(p=>{
     const txt=busqueda.toLowerCase();
-    return(!txt||p.nombre.toLowerCase().includes(txt)||p.cliente.toLowerCase().includes(txt)||p.maquilador.toLowerCase().includes(txt))&&(filtroMaq==="Todos"||p.maquilador===filtroMaq)&&(filtrocat==="Todos"||p.categoria===filtrocat);
+    return(!txt||p.nombre.toLowerCase().includes(txt)||p.cliente.toLowerCase().includes(txt)||p.maquilador.toLowerCase().includes(txt))
+      &&(filtroMaq==="Todos"||p.maquilador===filtroMaq)
+      &&(filtrocat==="Todos"||p.categoria===filtrocat)
+      &&(filtroTipo==="Todos"||p.tipo===filtroTipo)
+      &&(filtroDueno==="Todos"||p.responsable===filtroDueno);
   });
 
   const stats={total:proyectos.length,enProceso:proyectos.filter(p=>progreso(p)>0&&progreso(p)<100).length,vencidos:proyectos.reduce((a,p)=>a+p.tareas.filter(t=>t.status!=="Completado"&&t.fechaLimite&&new Date(t.fechaLimite)<new Date()).length,0),avg:proyectos.length?Math.round(proyectos.reduce((a,p)=>a+progreso(p),0)/proyectos.length):0};
@@ -1028,6 +1165,7 @@ function App(){
             </div>
             {esAdmin&&<Btn v="ghost" onClick={()=>setModalResponsables(true)}>👥 Equipo</Btn>}
             {esAdmin&&<Btn v="ghost" onClick={()=>setModalMaquiladores(true)}>🏭 Maquiladores</Btn>}
+            {esAdmin&&<Btn v="ghost" onClick={()=>setModalTipos(true)}>🏷️ Tipos</Btn>}
             {esAdmin&&<Btn v="purple" onClick={()=>setModalUsuarios(true)}>🔐 Usuarios</Btn>}
             {esAdmin&&<Btn onClick={()=>setModalNuevo(true)}>+ Nuevo proyecto</Btn>}
             <Btn v="secondary" onClick={logout} style={{fontSize:12}}>Cerrar sesión</Btn>
@@ -1039,10 +1177,24 @@ function App(){
         {[{label:"Proyectos totales",value:stats.total,color:PAL.text},{label:"En proceso",value:stats.enProceso,color:PAL.teal},{label:"Tareas vencidas",value:stats.vencidos,color:stats.vencidos>0?PAL.red:PAL.green},{label:"Avance promedio",value:`${stats.avg}%`,color:PAL.amber}].map(m=>(<div key={m.label} style={{background:PAL.surface,borderRadius:12,padding:"14px 16px",border:`1px solid ${PAL.border}`}}><div style={{fontSize:11,color:PAL.gray,marginBottom:4,textTransform:"uppercase",letterSpacing:"0.04em"}}>{m.label}</div><div style={{fontSize:24,fontWeight:800,color:m.color}}>{m.value}</div></div>))}
       </div>
 
-      <div style={{display:"flex",gap:10,marginBottom:16,flexWrap:"wrap"}}>
-        <input placeholder="Buscar producto, cliente o maquilador…" value={busqueda} onChange={e=>setBusqueda(e.target.value)} style={{flex:1,minWidth:200,padding:"9px 13px",borderRadius:9,border:`1px solid ${PAL.border}`,fontSize:13,outline:"none",background:PAL.surface,fontFamily:"inherit"}}/>
-        <Sel value={filtroMaq} onChange={e=>setFiltroMaq(e.target.value)} style={{width:150}}><option value="Todos">Todos los maquiladores</option>{maquiladoresList.map(m=><option key={m.nombre}>{m.nombre}</option>)}</Sel>
-        <Sel value={filtrocat} onChange={e=>setFiltrocat(e.target.value)} style={{width:130}}><option value="Todos">OTC y Cosméticos</option>{CATEGORIAS.map(c=><option key={c}>{c}</option>)}</Sel>
+      <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}>
+        <input placeholder="Buscar producto, cliente o maquilador…" value={busqueda} onChange={e=>setBusqueda(e.target.value)} style={{flex:1,minWidth:180,padding:"9px 13px",borderRadius:9,border:`1px solid ${PAL.border}`,fontSize:13,outline:"none",background:PAL.surface,fontFamily:"inherit"}}/>
+        <Sel value={filtroTipo} onChange={e=>setFiltroTipo(e.target.value)} style={{width:160}}>
+          <option value="Todos">Todos los tipos</option>
+          {tiposList.map(t=><option key={t}>{t}</option>)}
+        </Sel>
+        <Sel value={filtroDueno} onChange={e=>setFiltroDueno(e.target.value)} style={{width:160}}>
+          <option value="Todos">Todos los dueños</option>
+          {duenos.map(d=><option key={d}>{d}</option>)}
+        </Sel>
+        <Sel value={filtroMaq} onChange={e=>setFiltroMaq(e.target.value)} style={{width:140}}>
+          <option value="Todos">Todos los maquiladores</option>
+          {maquiladoresList.map(m=><option key={m.nombre}>{m.nombre}</option>)}
+        </Sel>
+        <Sel value={filtrocat} onChange={e=>setFiltrocat(e.target.value)} style={{width:120}}>
+          <option value="Todos">OTC y Cosméticos</option>
+          {CATEGORIAS.map(c=><option key={c}>{c}</option>)}
+        </Sel>
       </div>
 
       <div style={{display:"flex",flexDirection:"column",gap:10}}>
@@ -1054,6 +1206,7 @@ function App(){
       {modalResponsables&&<ResponsablesModal equipo={equipoGlobal} onSave={saveEquipo} onClose={()=>setModalResponsables(false)}/>}
       {modalUsuarios&&<UsuariosModal onClose={()=>setModalUsuarios(false)}/>}
       {modalMaquiladores&&<MaquiladoresModal maquiladores={maquiladoresList} onSave={saveMaquiladores} onClose={()=>setModalMaquiladores(false)}/>}
+      {modalTipos&&<TiposProyectoModal tipos={tiposList} onSave={saveTipos} onClose={()=>setModalTipos(false)}/>}
       {confirmDelProy&&(<Overlay><div style={{background:PAL.surface,borderRadius:14,padding:28,width:320,textAlign:"center"}}>
         <div style={{fontSize:28,marginBottom:8}}>🗑️</div>
         <div style={{fontSize:15,fontWeight:700,color:PAL.text,marginBottom:8}}>¿Eliminar proyecto?</div>
