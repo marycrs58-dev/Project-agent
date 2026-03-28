@@ -660,29 +660,80 @@ function ProyectoModal({proyecto,equipoGlobal,maquiladoresProp,onSave,onClose}){
 }
 
 // ─── TARJETA PROYECTO ─────────────────────────────────────────────────────────
-function TarjetaProyecto({proyecto,onClick,onDuplicate,onDelete,esAdmin}){
+function TarjetaProyecto({proyecto,onClick,onDuplicate,onDelete,esAdmin,modo="lista"}){
   const pct=progreso(proyecto);const dias=diasR(proyecto.fechaLanzamiento);
   const etapaActual=proyecto.etapas.find(e=>e.status==="En progreso")||proyecto.etapas[proyecto.etapas.filter(e=>e.status==="Completado").length]||proyecto.etapas[0];
   const vencidas=proyecto.tareas.filter(t=>t.status!=="Completado"&&t.fechaLimite&&new Date(t.fechaLimite)<new Date()).length;
+
+  // ── VISTA CUADRÍCULA ──
+  if(modo==="grid"){
+    return(
+      <div style={{background:PAL.surface,border:`1px solid ${PAL.border}`,borderRadius:14,overflow:"hidden",borderTop:`4px solid ${proyecto.color}`,transition:"box-shadow 0.2s,transform 0.15s",display:"flex",flexDirection:"column"}}
+        onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 6px 24px rgba(0,0,0,0.1)";e.currentTarget.style.transform="translateY(-2px)";}}
+        onMouseLeave={e=>{e.currentTarget.style.boxShadow="none";e.currentTarget.style.transform="none";}}>
+        {/* Imagen o placeholder */}
+        <div onClick={onClick} style={{cursor:"pointer",height:120,background:proyecto.render?"#f8f8f8":proyecto.color+"18",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",position:"relative"}}>
+          {proyecto.render
+            ?<img src={proyecto.render} alt={proyecto.nombre} style={{width:"100%",height:"100%",objectFit:"contain"}}/>
+            :<span style={{fontSize:42}}>💊</span>}
+          {vencidas>0&&<span style={{position:"absolute",top:8,right:8,background:PAL.red,color:"#fff",borderRadius:20,padding:"2px 8px",fontSize:10,fontWeight:700}}>⚠️ {vencidas}</span>}
+        </div>
+        {/* Contenido */}
+        <div onClick={onClick} style={{padding:"12px 14px",flex:1,cursor:"pointer"}}>
+          <div style={{fontSize:14,fontWeight:700,color:PAL.text,marginBottom:4,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{proyecto.nombre}</div>
+          <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:8}}>
+            <Pill label={proyecto.categoria} color={proyecto.color}/>
+            {proyecto.tipo&&<Pill label={proyecto.tipo} color={"#5B21B6"}/>}
+          </div>
+          <Bar value={pct} color={proyecto.color} h={6}/>
+          <div style={{display:"flex",justifyContent:"space-between",marginTop:5,fontSize:11}}>
+            <span style={{color:PAL.gray}}>{pct}%</span>
+            <span style={{color:dias<30?PAL.red:PAL.gray}}>{dias>0?`${dias}d`:"Vencido"}</span>
+          </div>
+          <div style={{marginTop:6,fontSize:11,color:PAL.teal,fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{etapaActual?.icon} {etapaActual?.label}</div>
+          <div style={{display:"flex",gap:2,marginTop:6}}>
+            {proyecto.etapas.map((e,i)=><div key={i} style={{flex:1,minWidth:4,height:4,borderRadius:2,background:e.status==="Completado"?PAL.teal:e.status==="En progreso"?proyecto.color:"#E8E4DC"}}/>)}
+          </div>
+        </div>
+        {/* Footer */}
+        <div style={{display:"flex",alignItems:"center",gap:6,padding:"8px 12px",borderTop:`1px solid ${PAL.border}`,background:"#FAFAF8"}}>
+          <Avatar nombre={proyecto.responsable} size={18}/>
+          <span style={{fontSize:11,color:PAL.gray,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{proyecto.responsable.split(" ")[0]}</span>
+          <span style={{fontSize:10,color:PAL.gray}}>🏭 {proyecto.maquilador}</span>
+          {esAdmin&&<>
+            <button onClick={e=>{e.stopPropagation();onDuplicate(proyecto);}} title="Duplicar"
+              style={{background:"none",border:`1px solid ${PAL.border}`,borderRadius:5,cursor:"pointer",padding:"2px 6px",fontSize:11,color:PAL.gray}}>⧉</button>
+            <button onClick={e=>{e.stopPropagation();onDelete(proyecto.id);}} title="Eliminar"
+              style={{background:"none",border:`1px solid ${PAL.red}44`,borderRadius:5,cursor:"pointer",padding:"2px 6px",fontSize:11,color:PAL.red}}>🗑️</button>
+          </>}
+        </div>
+      </div>
+    );
+  }
+
+  // ── VISTA LISTA ──
   return(
     <div style={{background:PAL.surface,border:`1px solid ${PAL.border}`,borderRadius:14,overflow:"hidden",borderLeft:`5px solid ${proyecto.color}`,transition:"box-shadow 0.2s,transform 0.15s"}}
-      onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 6px 24px rgba(0,0,0,0.1)";e.currentTarget.style.transform="translateY(-1px)";}}
+      onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 4px 18px rgba(0,0,0,0.08)";e.currentTarget.style.transform="translateY(-1px)";}}
       onMouseLeave={e=>{e.currentTarget.style.boxShadow="none";e.currentTarget.style.transform="none";}}>
       <div style={{display:"flex",gap:0}}>
-        {/* Render del producto */}
         {proyecto.render?(
-          <div style={{width:100,flexShrink:0,background:"#f8f8f8",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",cursor:"pointer"}} onClick={onClick}>
-            <img src={proyecto.render} alt={proyecto.nombre} style={{width:"100%",height:"100%",objectFit:"contain",maxHeight:130}}/>
+          <div style={{width:90,flexShrink:0,background:"#f8f8f8",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",cursor:"pointer"}} onClick={onClick}>
+            <img src={proyecto.render} alt={proyecto.nombre} style={{width:"100%",height:"100%",objectFit:"contain",maxHeight:120}}/>
           </div>
         ):(
-          <div onClick={onClick} style={{width:100,flexShrink:0,background:proyecto.color+"11",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:36}}>💊</div>
+          <div onClick={onClick} style={{width:90,flexShrink:0,background:proyecto.color+"11",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:32}}>💊</div>
         )}
-        {/* Contenido */}
-        <div style={{flex:1,padding:16,cursor:"pointer"}} onClick={onClick}>
+        <div style={{flex:1,padding:"14px 16px",cursor:"pointer"}} onClick={onClick}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
             <div style={{flex:1}}>
               <div style={{fontSize:15,fontWeight:700,color:PAL.text,marginBottom:3}}>{proyecto.nombre}</div>
-              <div style={{display:"flex",gap:6,flexWrap:"wrap"}}><Pill label={proyecto.categoria} color={proyecto.color}/><Pill label={proyecto.forma} color={PAL.gray}/>{proyecto.tipo&&<Pill label={proyecto.tipo} color={"#5B21B6"}/>}<span style={{fontSize:11,color:PAL.gray}}>🏭 {proyecto.maquilador} · {proyecto.pais}</span></div>
+              <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+                <Pill label={proyecto.categoria} color={proyecto.color}/>
+                <Pill label={proyecto.forma} color={PAL.gray}/>
+                {proyecto.tipo&&<Pill label={proyecto.tipo} color={"#5B21B6"}/>}
+                <span style={{fontSize:11,color:PAL.gray}}>🏭 {proyecto.maquilador} · {proyecto.pais}</span>
+              </div>
             </div>
             {vencidas>0&&<span style={{background:PAL.redLight,color:PAL.red,borderRadius:20,padding:"2px 9px",fontSize:11,fontWeight:600}}>⚠️ {vencidas}</span>}
           </div>
@@ -696,14 +747,13 @@ function TarjetaProyecto({proyecto,onClick,onDuplicate,onDelete,esAdmin}){
           </div>
         </div>
       </div>
-      {/* Footer con acciones */}
       <div style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",borderTop:`1px solid ${PAL.border}`,background:"#FAFAF8"}}>
         <Avatar nombre={proyecto.responsable} size={18}/><span style={{fontSize:11,color:PAL.gray,flex:1}}>{proyecto.responsable}</span>
         <span style={{fontSize:11,color:PAL.gray}}>👥 {proyecto.equipo.length} · 📋 {proyecto.tareas.length}</span>
         {esAdmin&&<>
-          <button onClick={e=>{e.stopPropagation();onDuplicate(proyecto);}} title="Duplicar proyecto"
+          <button onClick={e=>{e.stopPropagation();onDuplicate(proyecto);}} title="Duplicar"
             style={{background:"none",border:`1px solid ${PAL.border}`,borderRadius:6,cursor:"pointer",padding:"3px 8px",fontSize:12,color:PAL.gray}}>⧉ Duplicar</button>
-          <button onClick={e=>{e.stopPropagation();onDelete(proyecto.id);}} title="Eliminar proyecto"
+          <button onClick={e=>{e.stopPropagation();onDelete(proyecto.id);}} title="Eliminar"
             style={{background:"none",border:`1px solid ${PAL.red}44`,borderRadius:6,cursor:"pointer",padding:"3px 8px",fontSize:12,color:PAL.red}}>🗑️</button>
         </>}
       </div>
@@ -801,11 +851,52 @@ function ArchivosTab({proyecto}){
 
   const imagenes=todos.filter(a=>imgTipos.includes(a.tipo));
   const otros=todos.filter(a=>!imgTipos.includes(a.tipo));
+  const [descargando,setDescargando]=useState(false);
+  const [zipMsg,setZipMsg]=useState("");
+
+  const descargarTodos=async()=>{
+    if(!todos.length)return;
+    setDescargando(true);setZipMsg("Preparando ZIP…");
+    try{
+      if(!window.JSZip){
+        await new Promise((res,rej)=>{const s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";s.onload=res;s.onerror=rej;document.head.appendChild(s);});
+      }
+      const zip=new window.JSZip();
+      const carpeta=zip.folder(proyecto.nombre);
+      todos.forEach(arch=>{
+        try{
+          const b64=arch.url.split(",")[1];
+          const etapaNombre=(arch.etapa||"General").replace(/[^\w\sáéíóúñÁÉÍÓÚÑ]/g,"").trim();
+          carpeta.folder(etapaNombre).file(arch.nombre,b64,{base64:true});
+        }catch(e){}
+      });
+      setZipMsg("Generando ZIP…");
+      const blob=await zip.generateAsync({type:"blob"});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement("a");a.href=url;a.download=`${proyecto.nombre}_archivos.zip`;a.click();URL.revokeObjectURL(url);
+      setZipMsg("✅ Descarga lista");
+      setTimeout(()=>setZipMsg(""),3000);
+    }catch(e){setZipMsg("Error al generar ZIP");}
+    setDescargando(false);
+  };
 
   return(
     <div>
-      <div style={{fontSize:13,color:PAL.gray,marginBottom:16}}>
-        {todos.length} archivo(s) adjunto(s) en {proyecto.etapas.filter(e=>(e.archivos||[]).length>0).length} etapa(s)
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,flexWrap:"wrap",gap:8}}>
+        <span style={{fontSize:13,color:PAL.gray}}>
+          {todos.length} archivo(s) en {proyecto.etapas.filter(e=>(e.archivos||[]).length>0).length} etapa(s)
+        </span>
+        {todos.length>0&&(
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            {zipMsg&&<span style={{fontSize:12,color:zipMsg.startsWith("✅")?PAL.green:PAL.teal,fontWeight:500}}>{zipMsg}</span>}
+            <button onClick={descargarTodos} disabled={descargando}
+              style={{display:"flex",alignItems:"center",gap:7,padding:"8px 16px",borderRadius:9,border:"none",background:descargando?PAL.grayLight:PAL.teal,color:descargando?PAL.gray:"#fff",cursor:descargando?"not-allowed":"pointer",fontSize:13,fontWeight:600}}>
+              {descargando
+                ?<><span style={{width:14,height:14,border:"2px solid #ccc",borderTopColor:PAL.teal,borderRadius:"50%",display:"inline-block",animation:"spin 0.8s linear infinite"}}/>Generando…</>
+                :<>⬇ Descargar todo ({todos.length} archivos)</>}
+            </button>
+          </div>
+        )}
       </div>
 
       {imagenes.length>0&&(
@@ -891,7 +982,19 @@ function VistaProyecto({proyecto,equipoGlobal,onUpdate,onBack,esAdmin}){
   const [editProyecto,setEditProyecto]=useState(false);
   const [configEtapas,setConfigEtapas]=useState(false);
   const [filterTarea,setFilterTarea]=useState("Todas");
+  const [modalRiesgo,setModalRiesgo]=useState(null); // null | {} | riesgo
   const today=new Date();
+
+  const NIVELES_RIESGO=["Alto","Medio","Bajo"];
+  const ESTADO_RIESGO=["Activo","Mitigado","Cerrado"];
+  const saveRiesgo=(form)=>{
+    let riesgos;
+    if(modalRiesgo?.id) riesgos=(proyecto.riesgos||[]).map(r=>r.id===modalRiesgo.id?{...r,...form}:r);
+    else riesgos=[...(proyecto.riesgos||[]),{...form,id:uid()}];
+    onUpdate({...proyecto,riesgos});
+    setModalRiesgo(null);
+  };
+  const delRiesgo=(id)=>onUpdate({...proyecto,riesgos:(proyecto.riesgos||[]).filter(r=>r.id!==id)});
 
   const saveTarea=(form)=>{let t;if(modalTarea?.id)t=proyecto.tareas.map(x=>x.id===modalTarea.id?{...x,...form}:x);else t=[...proyecto.tareas,{...form,id:uid()}];onUpdate({...proyecto,tareas:t});};
   const delTarea=(id)=>{onUpdate({...proyecto,tareas:proyecto.tareas.filter(t=>t.id!==id)});setConfirmDel(null);};
@@ -909,6 +1012,58 @@ function VistaProyecto({proyecto,equipoGlobal,onUpdate,onBack,esAdmin}){
         <div style={{flex:1}}><div style={{fontSize:20,fontWeight:800,color:PAL.text,letterSpacing:-0.5}}>{proyecto.nombre}</div><div style={{fontSize:13,color:PAL.gray}}>{proyecto.cliente} · {proyecto.maquilador}, {proyecto.pais}</div></div>
         <Pill label={proyecto.categoria} color={proyecto.color}/>
         {esAdmin&&<button onClick={()=>setEditProyecto(true)} style={{background:"none",border:"none",cursor:"pointer",color:PAL.gray,fontSize:18,padding:"2px 6px"}}>⚙️</button>}
+      </div>
+
+      {/* Render + Riesgos */}
+      <div style={{display:"grid",gridTemplateColumns:proyecto.render?"180px 1fr":"1fr",gap:14,marginBottom:14}}>
+        {/* Render del producto */}
+        {proyecto.render&&(
+          <div style={{background:PAL.surface,border:`1px solid ${PAL.border}`,borderRadius:14,overflow:"hidden",display:"flex",flexDirection:"column"}}>
+            <div style={{flex:1,background:"#f8f8f8",display:"flex",alignItems:"center",justifyContent:"center",padding:8,minHeight:140}}>
+              <img src={proyecto.render} alt={proyecto.nombre} style={{maxWidth:"100%",maxHeight:160,objectFit:"contain"}}/>
+            </div>
+            <div style={{padding:"6px 10px",borderTop:`1px solid ${PAL.border}`,fontSize:11,color:PAL.gray,textAlign:"center"}}>{proyecto.nombre}</div>
+          </div>
+        )}
+        {/* Panel de riesgos */}
+        <div style={{background:PAL.surface,border:`1px solid ${PAL.border}`,borderRadius:14,padding:"14px 16px"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+            <span style={{fontSize:13,fontWeight:700,color:PAL.text}}>⚠️ Riesgos del proyecto</span>
+            {esAdmin&&<Btn style={{fontSize:11,padding:"4px 10px"}} onClick={()=>setModalRiesgo({})}>+ Riesgo</Btn>}
+          </div>
+          {!(proyecto.riesgos||[]).length?(
+            <div style={{textAlign:"center",padding:"14px 0",color:PAL.gray,fontSize:13}}>
+              {esAdmin?"Sin riesgos registrados. Haz clic en + Riesgo para agregar.":"Sin riesgos registrados."}
+            </div>
+          ):(
+            <div style={{display:"flex",flexDirection:"column",gap:7}}>
+              {(proyecto.riesgos||[]).map(r=>{
+                const colorNivel={Alto:PAL.red,Medio:PAL.amber,Bajo:PAL.green}[r.nivel]||PAL.gray;
+                const bgNivel={Alto:PAL.redLight,Medio:PAL.amberLight,Bajo:PAL.greenLight}[r.nivel]||PAL.grayLight;
+                return(
+                  <div key={r.id} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"9px 12px",background:bgNivel,borderRadius:9,border:`1px solid ${colorNivel}33`}}>
+                    <div style={{width:10,height:10,borderRadius:"50%",background:colorNivel,flexShrink:0,marginTop:3}}/>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:13,fontWeight:600,color:PAL.text}}>{r.descripcion}</div>
+                      <div style={{fontSize:11,color:PAL.gray,marginTop:2,display:"flex",gap:8,flexWrap:"wrap"}}>
+                        {r.impacto&&<span>📌 {r.impacto}</span>}
+                        {r.mitigacion&&<span>🛡️ {r.mitigacion}</span>}
+                      </div>
+                    </div>
+                    <div style={{display:"flex",gap:5,alignItems:"center",flexShrink:0}}>
+                      <span style={{fontSize:11,background:colorNivel+"22",color:colorNivel,borderRadius:5,padding:"2px 7px",fontWeight:600}}>{r.nivel}</span>
+                      <Badge label={r.estado||"Activo"}/>
+                      {esAdmin&&<>
+                        <button onClick={()=>setModalRiesgo(r)} style={{background:"none",border:"none",cursor:"pointer",fontSize:13,padding:"1px 3px"}}>✏️</button>
+                        <button onClick={()=>delRiesgo(r.id)} style={{background:"none",border:"none",cursor:"pointer",fontSize:13,padding:"1px 3px",color:PAL.red}}>🗑️</button>
+                      </>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       <div style={{background:PAL.surface,border:`1px solid ${PAL.border}`,borderRadius:14,padding:"14px 16px",marginBottom:14}}>
@@ -1017,6 +1172,36 @@ function VistaProyecto({proyecto,equipoGlobal,onUpdate,onBack,esAdmin}){
       {modalTeams&&<TeamsModal tareas={modalTeams} onClose={()=>setModalTeams(null)}/>}
       {editProyecto&&<ProyectoModal proyecto={proyecto} equipoGlobal={equipoGlobal} onSave={p=>{onUpdate({...proyecto,...p});setEditProyecto(false);}} onClose={()=>setEditProyecto(false)}/>}
       {configEtapas&&<EtapasConfigModal etapas={proyecto.etapas} onSave={etapas=>onUpdate({...proyecto,etapas:etapas.map(e=>({...e,entregables:e.entregables||[]}))})} onClose={()=>setConfigEtapas(false)}/>}
+      {modalRiesgo!==null&&(
+        <Overlay><div style={{background:PAL.surface,borderRadius:16,padding:24,width:"92%",maxWidth:460}}>
+          <div style={{fontSize:15,fontWeight:700,color:PAL.text,marginBottom:16}}>{modalRiesgo?.id?"Editar riesgo":"Nuevo riesgo"}</div>
+          {(()=>{
+            const [form,setForm]=React.useState(modalRiesgo?.id?{...modalRiesgo}:{descripcion:"",nivel:"Alto",impacto:"",mitigacion:"",estado:"Activo"});
+            const set=(k,v)=>setForm(f=>({...f,[k]:v}));
+            return(<div style={{display:"flex",flexDirection:"column",gap:12}}>
+              <Field label="Descripción del riesgo *"><Inp value={form.descripcion} onChange={e=>set("descripcion",e.target.value)} placeholder="Ej. Retraso en registro COFEPRIS"/></Field>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                <Field label="Nivel">
+                  <Sel value={form.nivel} onChange={e=>set("nivel",e.target.value)}>
+                    {NIVELES_RIESGO.map(n=><option key={n}>{n}</option>)}
+                  </Sel>
+                </Field>
+                <Field label="Estado">
+                  <Sel value={form.estado} onChange={e=>set("estado",e.target.value)}>
+                    {ESTADO_RIESGO.map(s=><option key={s}>{s}</option>)}
+                  </Sel>
+                </Field>
+              </div>
+              <Field label="Impacto potencial"><Inp value={form.impacto} onChange={e=>set("impacto",e.target.value)} placeholder="Ej. Retraso de 3 meses en lanzamiento"/></Field>
+              <Field label="Plan de mitigación"><Inp value={form.mitigacion} onChange={e=>set("mitigacion",e.target.value)} placeholder="Ej. Iniciar trámite con 2 meses de anticipación"/></Field>
+              <div style={{display:"flex",gap:10,marginTop:6}}>
+                <Btn v="secondary" style={{flex:1}} onClick={()=>setModalRiesgo(null)}>Cancelar</Btn>
+                <Btn style={{flex:1}} onClick={()=>{if(form.descripcion)saveRiesgo(form);}}>Guardar</Btn>
+              </div>
+            </div>);
+          })()}
+        </div></Overlay>
+      )}
       {confirmDel&&(<Overlay><div style={{background:PAL.surface,borderRadius:14,padding:24,width:300,textAlign:"center"}}><div style={{fontSize:15,fontWeight:700,marginBottom:8}}>¿Eliminar tarea?</div><div style={{fontSize:13,color:PAL.gray,marginBottom:20}}>Esta acción no se puede deshacer.</div><div style={{display:"flex",gap:10}}><Btn v="secondary" style={{flex:1}} onClick={()=>setConfirmDel(null)}>Cancelar</Btn><Btn v="danger" style={{flex:1}} onClick={()=>delTarea(confirmDel)}>Eliminar</Btn></div></div></Overlay>)}
     </div>
   );
@@ -1042,6 +1227,8 @@ function App(){
   const [filtrocat,setFiltrocat]=useState("Todos");
   const [filtroTipo,setFiltroTipo]=useState("Todos");
   const [filtroDueno,setFiltroDueno]=useState("Todos");
+  const [vista,setVista]=useState("grid"); // "grid" | "lista"
+  const [orden,setOrden]=useState("nombre"); // "nombre" | "avance" | "lanzamiento" | "vencidas" | "reciente"
   const [loading,setLoading]=useState(true);
   const [saving,setSaving]=useState(false);
 
@@ -1145,6 +1332,20 @@ function App(){
       &&(filtroDueno==="Todos"||p.responsable===filtroDueno);
   });
 
+  const ordenados=[...filtrados].sort((a,b)=>{
+    if(orden==="nombre") return a.nombre.localeCompare(b.nombre);
+    if(orden==="avance") return progreso(b)-progreso(a);
+    if(orden==="avance_asc") return progreso(a)-progreso(b);
+    if(orden==="lanzamiento") return new Date(a.fechaLanzamiento)-new Date(b.fechaLanzamiento);
+    if(orden==="vencidas"){
+      const va=a.tareas.filter(t=>t.status!=="Completado"&&t.fechaLimite&&new Date(t.fechaLimite)<new Date()).length;
+      const vb=b.tareas.filter(t=>t.status!=="Completado"&&t.fechaLimite&&new Date(t.fechaLimite)<new Date()).length;
+      return vb-va;
+    }
+    if(orden==="reciente") return b.id-a.id;
+    return 0;
+  });
+
   const stats={total:proyectos.length,enProceso:proyectos.filter(p=>progreso(p)>0&&progreso(p)<100).length,vencidos:proyectos.reduce((a,p)=>a+p.tareas.filter(t=>t.status!=="Completado"&&t.fechaLimite&&new Date(t.fechaLimite)<new Date()).length,0),avg:proyectos.length?Math.round(proyectos.reduce((a,p)=>a+progreso(p),0)/proyectos.length):0};
 
   return(
@@ -1197,10 +1398,40 @@ function App(){
         </Sel>
       </div>
 
-      <div style={{display:"flex",flexDirection:"column",gap:10}}>
-        {filtrados.map(p=><TarjetaProyecto key={p.id} proyecto={p} onClick={()=>setProyectoActivo(p)} onDuplicate={duplicarProyecto} onDelete={id=>setConfirmDelProy(id)} esAdmin={esAdmin}/>)}
-        {filtrados.length===0&&<div style={{textAlign:"center",padding:"40px 0",color:PAL.gray}}>{proyectos.length===0?"Cargando proyectos…":"No se encontraron proyectos"}</div>}
+      {/* Barra de ordenamiento y vista */}
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12,flexWrap:"wrap"}}>
+        <span style={{fontSize:12,color:PAL.gray,fontWeight:500}}>Ordenar por:</span>
+        {[["reciente","Reciente"],["nombre","A-Z"],["avance","Mayor avance"],["avance_asc","Menor avance"],["lanzamiento","Lanzamiento"],["vencidas","Vencidas"]].map(([v,l])=>(
+          <button key={v} onClick={()=>setOrden(v)}
+            style={{padding:"4px 11px",borderRadius:7,border:`1px solid ${orden===v?PAL.teal:PAL.border}`,background:orden===v?PAL.tealLight:PAL.surface,color:orden===v?PAL.teal:PAL.gray,fontSize:12,cursor:"pointer",fontWeight:orden===v?700:400}}>
+            {l}
+          </button>
+        ))}
+        <div style={{marginLeft:"auto",display:"flex",gap:4}}>
+          <button onClick={()=>setVista("grid")} title="Vista cuadrícula"
+            style={{width:32,height:32,borderRadius:7,border:`1px solid ${vista==="grid"?PAL.teal:PAL.border}`,background:vista==="grid"?PAL.tealLight:PAL.surface,cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center"}}>
+            ⊞
+          </button>
+          <button onClick={()=>setVista("lista")} title="Vista lista"
+            style={{width:32,height:32,borderRadius:7,border:`1px solid ${vista==="lista"?PAL.teal:PAL.border}`,background:vista==="lista"?PAL.tealLight:PAL.surface,cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center"}}>
+            ☰
+          </button>
+        </div>
+        <span style={{fontSize:12,color:PAL.gray}}>{ordenados.length} proyecto(s)</span>
       </div>
+
+      {/* Lista o cuadrícula */}
+      {vista==="lista"?(
+        <div style={{display:"flex",flexDirection:"column",gap:10}}>
+          {ordenados.map(p=><TarjetaProyecto key={p.id} proyecto={p} onClick={()=>setProyectoActivo(p)} onDuplicate={duplicarProyecto} onDelete={id=>setConfirmDelProy(id)} esAdmin={esAdmin} modo="lista"/>)}
+          {ordenados.length===0&&<div style={{textAlign:"center",padding:"40px 0",color:PAL.gray}}>{proyectos.length===0?"Cargando proyectos…":"No se encontraron proyectos"}</div>}
+        </div>
+      ):(
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:14}}>
+          {ordenados.map(p=><TarjetaProyecto key={p.id} proyecto={p} onClick={()=>setProyectoActivo(p)} onDuplicate={duplicarProyecto} onDelete={id=>setConfirmDelProy(id)} esAdmin={esAdmin} modo="grid"/>)}
+          {ordenados.length===0&&<div style={{gridColumn:"1/-1",textAlign:"center",padding:"40px 0",color:PAL.gray}}>{proyectos.length===0?"Cargando proyectos…":"No se encontraron proyectos"}</div>}
+        </div>
+      )}
 
       {modalNuevo&&<ProyectoModal equipoGlobal={equipoGlobal} maquiladoresProp={maquiladoresList} onSave={p=>{crearProyecto(p);setModalNuevo(false);}} onClose={()=>setModalNuevo(false)}/>}
       {modalResponsables&&<ResponsablesModal equipo={equipoGlobal} onSave={saveEquipo} onClose={()=>setModalResponsables(false)}/>}
