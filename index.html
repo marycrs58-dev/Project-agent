@@ -500,22 +500,26 @@ function GanttTab({proyecto}){
   const proyEnd=proyecto.fechaLanzamiento||"2026-12-31";
 
   const [escala,setEscala]=useState("meses");
-  const [vistaInicio,setVistaInicio]=useState(proyStart.slice(0,7)); // YYYY-MM
+  const [vistaInicio,setVistaInicio]=useState(proyStart.slice(0,7));
   const [vistaFin,setVistaFin]=useState(proyEnd.slice(0,7));
+  const [ajustar,setAjustar]=useState(true); // true = stretch to fill, false = scroll
 
   const barColor={Completado:PAL.teal,"En progreso":proyecto.color,Pendiente:"#D1D5DB",Bloqueado:PAL.red,Retrasado:"#7F1D1D"};
   const bodyRef=useRef(null);
   const headerRef=useRef(null);
 
-  // rango visible
   const vStart=new Date(vistaInicio+"-01");
   const vEnd=new Date(vistaFin+"-01"); vEnd.setMonth(vEnd.getMonth()+1); vEnd.setDate(vEnd.getDate()-1);
   const totalDays=Math.max(1,Math.ceil((vEnd-vStart)/86400000));
   const todayPct=Math.min(100,Math.max(0,Math.ceil((today-vStart)/86400000)/totalDays*100));
 
-  const pct=(d)=>{ if(!d)return null; const dt=new Date(d+"T12:00:00"); return Math.min(100,Math.max(0,Math.ceil((dt-vStart)/86400000)/totalDays*100)); };
+  const pct=(d)=>{
+    if(!d)return null;
+    const dt=new Date(d+"T12:00:00");
+    return Math.min(100,Math.max(0,Math.ceil((dt-vStart)/86400000)/totalDays*100));
+  };
 
-  // Generar columnas encabezado
+  // Columnas
   const columnas=[];
   if(escala==="meses"){
     let cur=new Date(vStart.getFullYear(),vStart.getMonth(),1);
@@ -537,14 +541,12 @@ function GanttTab({proyecto}){
     }
   }
 
-  const pxPorDia=escala==="semanas"?28:12;
-  const chartW=Math.max(500,totalDays*pxPorDia);
-  const COL_W=200; // ancho columna fija
+  // Si ajustar=true, el ancho es 100% (se estira). Si no, usa pixeles por día
+  const pxPorDia=escala==="semanas"?28:14;
+  const chartW=ajustar?"100%":Math.max(500,totalDays*pxPorDia);
+  const COL_W=200;
 
-  // sincronizar scroll horizontal entre header y body
-  const onBodyScroll=()=>{
-    if(headerRef.current&&bodyRef.current) headerRef.current.scrollLeft=bodyRef.current.scrollLeft;
-  };
+  const onBodyScroll=()=>{ if(headerRef.current&&bodyRef.current) headerRef.current.scrollLeft=bodyRef.current.scrollLeft; };
   const scrollDir=(dir)=>{ if(bodyRef.current) bodyRef.current.scrollLeft+=dir*250; };
 
   const exportCSV=()=>{
@@ -559,7 +561,7 @@ function GanttTab({proyecto}){
     <div>
       {/* ── Toolbar ── */}
       <div style={{display:"flex",gap:10,marginBottom:14,flexWrap:"wrap",alignItems:"flex-end"}}>
-        {/* Fechas de vista */}
+        {/* Rango de fechas */}
         <div style={{display:"flex",gap:8,alignItems:"flex-end",flexWrap:"wrap"}}>
           <div>
             <div style={{fontSize:10,color:PAL.gray,marginBottom:3,textTransform:"uppercase",letterSpacing:"0.05em"}}>Desde</div>
@@ -572,41 +574,45 @@ function GanttTab({proyecto}){
               style={{padding:"5px 10px",borderRadius:8,border:`1px solid ${PAL.border}`,fontSize:13,outline:"none",background:PAL.surface,fontFamily:"inherit",cursor:"pointer"}}/>
           </div>
           <button onClick={()=>{setVistaInicio(proyStart.slice(0,7));setVistaFin(proyEnd.slice(0,7));}}
-            style={{padding:"5px 10px",borderRadius:8,border:`1px solid ${PAL.border}`,background:PAL.grayLight,fontSize:12,cursor:"pointer",color:PAL.gray}}>
-            ↺ Resetear
+            style={{padding:"5px 10px",borderRadius:8,border:`1px solid ${PAL.border}`,background:PAL.grayLight,fontSize:12,cursor:"pointer",color:PAL.gray,height:32}}>
+            ↺ Todo el proyecto
           </button>
         </div>
 
-        <div style={{marginLeft:"auto",display:"flex",gap:8,alignItems:"center"}}>
-          {/* Escala */}
+        <div style={{marginLeft:"auto",display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
+          {/* Ajustar a pantalla */}
+          <button onClick={()=>setAjustar(a=>!a)}
+            style={{padding:"4px 11px",borderRadius:7,border:`1px solid ${PAL.border}`,background:ajustar?PAL.tealLight:PAL.surface,color:ajustar?PAL.teal:PAL.gray,cursor:"pointer",fontSize:12,fontWeight:ajustar?700:400}}>
+            {ajustar?"⊞ Ajustado a pantalla":"↔ Escala real"}
+          </button>
+          {/* Toggle escala */}
           <div style={{display:"flex",background:PAL.grayLight,borderRadius:8,padding:2,gap:2}}>
             {[["meses","📅 Meses"],["semanas","📆 Semanas"]].map(([v,l])=>(
               <button key={v} onClick={()=>setEscala(v)}
-                style={{padding:"4px 11px",borderRadius:6,border:"none",background:escala===v?PAL.surface:"transparent",color:escala===v?PAL.teal:PAL.gray,cursor:"pointer",fontSize:12,fontWeight:escala===v?700:400,boxShadow:escala===v?"0 1px 3px rgba(0,0,0,0.1)":"none"}}>
+                style={{padding:"4px 10px",borderRadius:6,border:"none",background:escala===v?PAL.surface:"transparent",color:escala===v?PAL.teal:PAL.gray,cursor:"pointer",fontSize:12,fontWeight:escala===v?700:400,boxShadow:escala===v?"0 1px 3px rgba(0,0,0,0.1)":"none"}}>
                 {l}
               </button>
             ))}
           </div>
-          {/* Nav */}
-          <button onClick={()=>scrollDir(-1)} style={{width:28,height:28,borderRadius:7,border:`1px solid ${PAL.border}`,background:PAL.surface,cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",color:PAL.gray}}>&#8249;</button>
-          <button onClick={()=>scrollDir(1)} style={{width:28,height:28,borderRadius:7,border:`1px solid ${PAL.border}`,background:PAL.surface,cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",color:PAL.gray}}>&#8250;</button>
-          <Btn v="ghost" onClick={exportCSV} style={{fontSize:12,padding:"5px 12px"}}>📥 CSV</Btn>
+          {!ajustar&&<>
+            <button onClick={()=>scrollDir(-1)} style={{width:26,height:26,borderRadius:6,border:`1px solid ${PAL.border}`,background:PAL.surface,cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",color:PAL.gray}}>&#8249;</button>
+            <button onClick={()=>scrollDir(1)} style={{width:26,height:26,borderRadius:6,border:`1px solid ${PAL.border}`,background:PAL.surface,cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",color:PAL.gray}}>&#8250;</button>
+          </>}
+          <Btn v="ghost" onClick={exportCSV} style={{fontSize:12,padding:"5px 10px"}}>📥 CSV</Btn>
         </div>
       </div>
 
-      {/* ── Gantt con columna fija ── */}
+      {/* ── Gantt ── */}
       <div style={{border:`1px solid ${PAL.border}`,borderRadius:12,overflow:"hidden",background:PAL.surface}}>
-        {/* Header row */}
-        <div style={{display:"flex",borderBottom:`1px solid ${PAL.border}`,background:"#F8F9FF"}}>
-          {/* Columna fija — header */}
-          <div style={{width:COL_W,flexShrink:0,padding:"8px 12px",fontSize:11,fontWeight:700,color:PAL.gray,borderRight:`1px solid ${PAL.border}`,textTransform:"uppercase",letterSpacing:"0.05em",background:"#F8F9FF",zIndex:2}}>
+        {/* Header */}
+        <div style={{display:"flex",borderBottom:`2px solid ${PAL.border}`,background:"#F8F9FF"}}>
+          <div style={{width:COL_W,flexShrink:0,padding:"7px 12px",fontSize:11,fontWeight:700,color:PAL.gray,borderRight:`1px solid ${PAL.border}`,textTransform:"uppercase",letterSpacing:"0.05em"}}>
             Etapa
           </div>
-          {/* Meses / semanas header — scrollable pero sincronizado */}
-          <div ref={headerRef} style={{flex:1,overflowX:"hidden",pointerEvents:"none"}}>
-            <div style={{display:"flex",width:chartW}}>
+          <div ref={headerRef} style={{flex:1,overflow:"hidden",pointerEvents:"none"}}>
+            <div style={{display:"flex",width:chartW,minWidth:"100%"}}>
               {columnas.map((col,i)=>(
-                <div key={i} style={{flex:`0 0 ${col.width}%`,fontSize:escala==="semanas"?9:10,color:PAL.gray,borderLeft:`1px dashed ${PAL.border}`,paddingLeft:5,paddingTop:8,paddingBottom:8,overflow:"hidden",whiteSpace:"nowrap",fontWeight:600}}>
+                <div key={i} style={{flex:`0 0 ${col.width}%`,fontSize:escala==="semanas"?9:10,color:PAL.gray,borderLeft:`1px dashed ${PAL.border}`,paddingLeft:5,paddingTop:7,paddingBottom:7,overflow:"hidden",whiteSpace:"nowrap",fontWeight:600}}>
                   {col.label}
                 </div>
               ))}
@@ -614,27 +620,26 @@ function GanttTab({proyecto}){
           </div>
         </div>
 
-        {/* Body — scrollable */}
+        {/* Body */}
         <div style={{display:"flex"}}>
-          {/* Columna fija — etapas */}
-          <div style={{width:COL_W,flexShrink:0,borderRight:`1px solid ${PAL.border}`,background:PAL.surface,zIndex:2}}>
+          {/* Columna fija */}
+          <div style={{width:COL_W,flexShrink:0,borderRight:`1px solid ${PAL.border}`,background:PAL.surface}}>
             {proyecto.etapas.map(etapa=>(
-              <div key={etapa.id} style={{display:"flex",alignItems:"center",gap:6,padding:"6px 10px",borderBottom:`1px solid ${PAL.border+"88"}`,height:36}}>
+              <div key={etapa.id} style={{display:"flex",alignItems:"center",gap:6,padding:"5px 10px",borderBottom:`1px solid ${PAL.border+"55"}`,height:32}}>
                 <span style={{fontSize:13,flexShrink:0}}>{etapa.icon}</span>
                 <span style={{fontSize:11,color:PAL.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontWeight:500}}>{etapa.label}</span>
               </div>
             ))}
-            {/* Fila lanzamiento */}
-            <div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 10px",height:32,background:"#EEF4FF"}}>
-              <span style={{fontSize:13}}>🚀</span>
+            <div style={{display:"flex",alignItems:"center",gap:6,padding:"5px 10px",height:28,background:"#EEF4FF",borderTop:`1px solid #C7D9F8`}}>
+              <span style={{fontSize:12}}>🚀</span>
               <span style={{fontSize:11,color:"#1D4ED8",fontWeight:700}}>Lanzamiento</span>
             </div>
           </div>
 
-          {/* Área de barras — scrollable */}
+          {/* Área barras */}
           <div ref={bodyRef} onScroll={onBodyScroll}
-            style={{flex:1,overflowX:"auto",cursor:"grab",position:"relative"}}
-            onMouseDown={e=>{
+            style={{flex:1,overflowX:ajustar?"hidden":"auto",cursor:ajustar?"default":"grab",position:"relative"}}
+            onMouseDown={ajustar?undefined:e=>{
               const el=bodyRef.current;if(!el)return;
               el.style.cursor="grabbing";
               let sx=e.pageX,sl=el.scrollLeft;
@@ -642,41 +647,34 @@ function GanttTab({proyecto}){
               const up=()=>{el.style.cursor="grab";document.removeEventListener("mousemove",move);document.removeEventListener("mouseup",up);};
               document.addEventListener("mousemove",move);document.addEventListener("mouseup",up);
             }}>
-            <div style={{width:chartW,position:"relative"}}>
-              {/* Línea hoy */}
-              {todayPct>=0&&todayPct<=100&&(
-                <div style={{position:"absolute",left:`${todayPct}%`,top:0,bottom:0,width:2,background:PAL.red,opacity:0.7,zIndex:3,pointerEvents:"none"}}/>
-              )}
-              {/* Franjas de columnas de fondo */}
-              <div style={{position:"absolute",inset:0,display:"flex",pointerEvents:"none"}}>
+            <div style={{width:chartW,minWidth:"100%",position:"relative"}}>
+              {/* Hoy */}
+              {todayPct>=0&&todayPct<=100&&<div style={{position:"absolute",left:`${todayPct}%`,top:0,bottom:0,width:2,background:PAL.red,opacity:0.6,zIndex:3,pointerEvents:"none"}}/>}
+              {/* Fondos columnas */}
+              <div style={{position:"absolute",inset:0,display:"flex",pointerEvents:"none",zIndex:0}}>
                 {columnas.map((col,i)=>(
-                  <div key={i} style={{flex:`0 0 ${col.width}%`,borderLeft:`1px dashed ${PAL.border}`,background:i%2===0?"transparent":"rgba(0,0,0,0.015)"}}/>
+                  <div key={i} style={{flex:`0 0 ${col.width}%`,borderLeft:`1px dashed ${PAL.border}`,background:i%2===0?"transparent":"rgba(0,0,0,0.013)"}}/>
                 ))}
               </div>
-              {/* Barras por etapa */}
+              {/* Filas */}
               {proyecto.etapas.map(etapa=>{
                 const sp=pct(etapa.fechaInicio);
                 const ep=pct(etapa.fechaFin);
-                const hasBar=sp!==null||ep!==null;
                 const barLeft=sp??ep??0;
-                const barW=sp!==null&&ep!==null?Math.max(0.5,ep-sp):1;
+                const barW=sp!==null&&ep!==null?Math.max(0.5,ep-sp):sp!==null||ep!==null?1.5:0;
                 return(
-                  <div key={etapa.id} style={{height:36,borderBottom:`1px solid ${PAL.border+"88"}`,display:"flex",alignItems:"center",position:"relative"}}>
-                    <div style={{position:"absolute",inset:"4px 0",background:"#F3F4F6",borderRadius:4,overflow:"hidden"}}>
-                      {hasBar&&(
-                        <div style={{position:"absolute",left:`${barLeft}%`,width:`${barW}%`,top:0,bottom:0,background:barColor[etapa.status]||"#D1D5DB",borderRadius:4,opacity:0.9,display:"flex",alignItems:"center",paddingLeft:6,minWidth:4}}>
-                          {barW>5&&<span style={{fontSize:9,color:"#fff",whiteSpace:"nowrap",overflow:"hidden",fontWeight:500}}>{etapa.responsable}</span>}
-                        </div>
-                      )}
+                  <div key={etapa.id} style={{height:32,borderBottom:`1px solid ${PAL.border+"55"}`,position:"relative",display:"flex",alignItems:"center"}}>
+                    <div style={{position:"absolute",left:4,right:4,top:4,bottom:4,background:"#F3F4F6",borderRadius:4,overflow:"hidden"}}>
+                      {barW>0&&<div style={{position:"absolute",left:`${barLeft}%`,width:`${barW}%`,top:0,bottom:0,background:barColor[etapa.status]||"#D1D5DB",borderRadius:4,opacity:0.9,display:"flex",alignItems:"center",paddingLeft:5,minWidth:4}}>
+                        {barW>4&&<span style={{fontSize:9,color:"#fff",whiteSpace:"nowrap",overflow:"hidden",fontWeight:500}}>{etapa.responsable}</span>}
+                      </div>}
                     </div>
                   </div>
                 );
               })}
               {/* Fila lanzamiento */}
-              <div style={{height:32,background:"#EEF4FF",display:"flex",alignItems:"center",position:"relative"}}>
-                {pct(proyecto.fechaLanzamiento)!==null&&(
-                  <div style={{position:"absolute",left:`${pct(proyecto.fechaLanzamiento)}%`,transform:"translateX(-50%)",fontSize:16,zIndex:4}}>🚀</div>
-                )}
+              <div style={{height:28,background:"#EEF4FF",borderTop:`1px solid #C7D9F8`,position:"relative",display:"flex",alignItems:"center"}}>
+                {pct(proyecto.fechaLanzamiento)!==null&&<div style={{position:"absolute",left:`${pct(proyecto.fechaLanzamiento)}%`,transform:"translateX(-50%)",fontSize:16,zIndex:4}}>🚀</div>}
               </div>
             </div>
           </div>
@@ -688,7 +686,9 @@ function GanttTab({proyecto}){
         {[["Completado",PAL.teal],["En progreso",proyecto.color],["Retrasado",PAL.red],["Pendiente","#D1D5DB"]].map(([l,c])=>(
           <span key={l} style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:10,height:10,borderRadius:2,background:c,display:"inline-block"}}/>{l}</span>
         ))}
-        <span style={{marginLeft:"auto",fontSize:10}}>Arrastra o usa ‹ › · Ajusta el rango de fechas arriba</span>
+        <span style={{marginLeft:"auto",fontSize:10,color:PAL.gray}}>
+          {ajustar?"Mostrando el rango seleccionado ajustado a pantalla":"Arrastra el diagrama o usa ‹ › para navegar"}
+        </span>
       </div>
     </div>
   );
@@ -1411,28 +1411,30 @@ function VistaProyecto({proyecto,equipoGlobal,onUpdate,onBack,esAdmin}){
                 {proyecto.responsable&&<><span style={{opacity:0.3}}>·</span><span>👤 {proyecto.responsable}</span></>}
               </div>
             </div>
-            {/* Métricas en fila completa y bien distribuida */}
-            <div style={{display:"flex",gap:10,marginTop:"auto",alignItems:"stretch"}}>
+            {/* Métricas — distribuidas a lo ancho, tamaño orgánico */}
+            <div style={{display:"flex",gap:8,marginTop:"auto"}}>
               {/* Avance */}
-              <div style={{background:"rgba(255,255,255,0.85)",borderRadius:12,padding:"10px 18px",border:"1px solid #A8C4E0",textAlign:"center",flex:1}}>
-                <div style={{fontSize:28,fontWeight:900,color:proyecto.color,lineHeight:1}}>{progreso(proyecto)}%</div>
-                <div style={{fontSize:10,color:"#6B7CB8",marginTop:3,fontWeight:500}}>Avance</div>
-                <div style={{marginTop:6,height:4,background:"rgba(37,99,235,0.1)",borderRadius:99,overflow:"hidden"}}>
+              <div style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"8px 14px",border:"1px solid #A8C4E0",flex:1,display:"flex",flexDirection:"column",gap:4}}>
+                <div style={{display:"flex",alignItems:"baseline",gap:4}}>
+                  <span style={{fontSize:20,fontWeight:800,color:proyecto.color,lineHeight:1}}>{progreso(proyecto)}%</span>
+                  <span style={{fontSize:10,color:"#6B7CB8",fontWeight:500}}>avance</span>
+                </div>
+                <div style={{height:4,background:"rgba(37,99,235,0.1)",borderRadius:99,overflow:"hidden"}}>
                   <div style={{width:`${progreso(proyecto)}%`,height:"100%",background:proyecto.color,borderRadius:99}}/>
                 </div>
               </div>
               {/* Etapas */}
-              <div style={{background:"rgba(255,255,255,0.85)",borderRadius:12,padding:"10px 18px",border:"1px solid #A8C4E0",textAlign:"center",flex:1}}>
-                <div style={{fontSize:28,fontWeight:900,color:PAL.teal,lineHeight:1}}>
-                  {proyecto.etapas.filter(e=>e.status==="Completado").length}
-                  <span style={{fontSize:16,color:"#8896C0",fontWeight:500}}>/{proyecto.etapas.length}</span>
+              <div style={{background:"rgba(255,255,255,0.85)",borderRadius:10,padding:"8px 14px",border:"1px solid #A8C4E0",flex:1,display:"flex",flexDirection:"column",justifyContent:"center"}}>
+                <div style={{display:"flex",alignItems:"baseline",gap:3}}>
+                  <span style={{fontSize:20,fontWeight:800,color:PAL.teal,lineHeight:1}}>{proyecto.etapas.filter(e=>e.status==="Completado").length}</span>
+                  <span style={{fontSize:13,color:"#8896C0",fontWeight:500}}>/{proyecto.etapas.length}</span>
                 </div>
-                <div style={{fontSize:10,color:"#6B7CB8",marginTop:3,fontWeight:500}}>Etapas completadas</div>
+                <div style={{fontSize:10,color:"#6B7CB8",fontWeight:500,marginTop:2}}>etapas completadas</div>
               </div>
               {/* Lanzamiento */}
-              <div style={{background:"rgba(255,255,255,0.9)",borderRadius:12,padding:"10px 20px",border:"2px solid #3B82F6",textAlign:"center",flex:2}}>
-                <div style={{fontSize:20,fontWeight:900,color:"#1D4ED8",lineHeight:1}}>🚀 {proyecto.fechaLanzamiento}</div>
-                <div style={{fontSize:10,color:"#3B82F6",marginTop:4,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase"}}>Fecha de lanzamiento</div>
+              <div style={{background:"rgba(255,255,255,0.9)",borderRadius:10,padding:"8px 14px",border:"2px solid #3B82F6",flex:2,display:"flex",flexDirection:"column",justifyContent:"center"}}>
+                <div style={{fontSize:14,fontWeight:800,color:"#1D4ED8",lineHeight:1.2}}>🚀 {proyecto.fechaLanzamiento}</div>
+                <div style={{fontSize:9,color:"#3B82F6",marginTop:3,fontWeight:700,letterSpacing:"0.06em",textTransform:"uppercase"}}>Fecha de lanzamiento</div>
               </div>
             </div>
           </div>
