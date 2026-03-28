@@ -501,7 +501,7 @@ function GanttTab({proyecto}){
   const [vistaFin,setVistaFin]=useState(proyEnd.slice(0,7));
   const [ajustar,setAjustar]=useState(true); // true = stretch to fill, false = scroll
 
-  const barColor={Completado:PAL.teal,"En progreso":proyecto.color,Pendiente:"#D1D5DB",Bloqueado:PAL.red,Retrasado:"#7F1D1D"};
+  const barColor={Completado:PAL.teal,"En progreso":"#3B82F6",Pendiente:"#D1D5DB",Bloqueado:PAL.red,Retrasado:"#7F1D1D"};
   const bodyRef=useRef(null);
   const headerRef=useRef(null);
 
@@ -680,7 +680,7 @@ function GanttTab({proyecto}){
 
       {/* Leyenda */}
       <div style={{display:"flex",gap:14,marginTop:10,flexWrap:"wrap",fontSize:11,color:PAL.gray,alignItems:"center"}}>
-        {[["Completado",PAL.teal],["En progreso",proyecto.color],["Retrasado",PAL.red],["Pendiente","#D1D5DB"]].map(([l,c])=>(
+        {[["Completado",PAL.teal],["En progreso","#3B82F6"],["Retrasado",PAL.red],["Pendiente","#D1D5DB"]].map(([l,c])=>(
           <span key={l} style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:10,height:10,borderRadius:2,background:c,display:"inline-block"}}/>{l}</span>
         ))}
         <span style={{marginLeft:"auto",fontSize:10,color:PAL.gray}}>
@@ -928,7 +928,7 @@ function TarjetaProyecto({proyecto,onClick,onDuplicate,onDelete,esAdmin,modo="li
           </div>
           <div style={{marginTop:6,fontSize:11,color:PAL.teal,fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{etapaActual?.icon} {etapaActual?.label}</div>
           <div style={{display:"flex",gap:2,marginTop:6}}>
-            {proyecto.etapas.map((e,i)=><div key={i} style={{flex:1,minWidth:4,height:4,borderRadius:2,background:e.status==="Completado"?PAL.teal:e.status==="En progreso"?proyecto.color:e.status==="Retrasado"?PAL.red:"#E8E4DC"}}/>)}
+            {proyecto.etapas.map((e,i)=><div key={i} style={{flex:1,minWidth:4,height:4,borderRadius:2,background:e.status==="Completado"?PAL.teal:e.status==="En progreso"?"#3B82F6":e.status==="Retrasado"?PAL.red:"#E8E4DC"}}/>)}
           </div>
         </div>
         {/* Footer */}
@@ -979,7 +979,7 @@ function TarjetaProyecto({proyecto,onClick,onDuplicate,onDelete,esAdmin,modo="li
             <span style={{color:dias<30?PAL.red:PAL.gray}}>{dias>0?`${dias} días`:"⚠️ Vencido"}</span>
           </div>
           <div style={{display:"flex",gap:2,marginTop:8}}>
-            {proyecto.etapas.map((e,i)=><div key={i} title={e.label} style={{flex:1,minWidth:5,height:5,borderRadius:3,background:e.status==="Completado"?PAL.teal:e.status==="En progreso"?proyecto.color:e.status==="Retrasado"?PAL.red:"#E8E4DC"}}/>)}
+            {proyecto.etapas.map((e,i)=><div key={i} title={e.label} style={{flex:1,minWidth:5,height:5,borderRadius:3,background:e.status==="Completado"?PAL.teal:e.status==="En progreso"?"#3B82F6":e.status==="Retrasado"?PAL.red:"#E8E4DC"}}/>)}
           </div>
         </div>
       </div>
@@ -1263,7 +1263,7 @@ function FullscreenPipeline({proyecto,onClose}){
 
       {/* Leyenda */}
       <div style={{display:"flex",gap:20,marginTop:14,fontSize:12,color:PAL.gray,flexWrap:"wrap"}}>
-        {[["Completado",PAL.teal],["En progreso",proyecto.color],["Retrasado",PAL.red],["Pendiente","#D1D5DB"]].map(([l,c])=>(
+        {[["Completado",PAL.teal],["En progreso","#3B82F6"],["Retrasado",PAL.red],["Pendiente","#D1D5DB"]].map(([l,c])=>(
           <span key={l} style={{display:"flex",alignItems:"center",gap:5}}><span style={{width:10,height:10,borderRadius:"50%",background:c,display:"inline-block"}}/>{l}</span>
         ))}
         <span style={{marginLeft:"auto",color:"#AAB"}}>Clic en etapa para ver entregables · ESC para salir</span>
@@ -1416,7 +1416,7 @@ function VistaProyecto({proyecto,equipoGlobal,onUpdate,onBack,esAdmin}){
                   <span style={{fontSize:9,color:PAL.gray}}>avance</span>
                 </div>
                 <div style={{height:3,background:"#E8E4DC",borderRadius:99,overflow:"hidden"}}>
-                  <div style={{width:`${progreso(proyecto)}%`,height:"100%",background:proyecto.color,borderRadius:99}}/>
+                  <div style={{width:`${progreso(proyecto)}%`,height:"100%",background:"#3B82F6",borderRadius:99}}/>
                 </div>
               </div>
               <div style={{background:"#fff",borderRadius:8,padding:"6px 12px",border:"1px solid #E8E4DC",flex:1,display:"flex",flexDirection:"column",justifyContent:"center"}}>
@@ -1464,7 +1464,7 @@ function VistaProyecto({proyecto,equipoGlobal,onUpdate,onBack,esAdmin}){
           </div>
         </div>
         <div style={{height:4,background:"rgba(0,0,0,0.04)"}}>
-          <div style={{width:`${progreso(proyecto)}%`,height:"100%",background:proyecto.color,transition:"width 1.2s ease"}}/>
+          <div style={{width:`${progreso(proyecto)}%`,height:"100%",background:"#3B82F6",transition:"width 1.2s ease"}}/>
         </div>
       </div>
       </div>
