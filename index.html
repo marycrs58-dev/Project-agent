@@ -495,112 +495,200 @@ function EtapasConfigModal({etapas,onSave,onClose}){
 
 // ─── GANTT ─────────────────────────────────────────────────────────────────────
 function GanttTab({proyecto}){
-  const ganttRef=useRef(null);
-  const [escala,setEscala]=useState("meses");
   const today=new Date();
-  const start=new Date(proyecto.fechaInicio||"2026-01-01");
-  const end=new Date(proyecto.fechaLanzamiento||"2026-12-31");
-  const totalDays=Math.max(1,Math.ceil((end-start)/86400000));
-  const todayPct=Math.min(100,Math.max(0,Math.ceil((today-start)/86400000)/totalDays*100));
+  const proyStart=proyecto.fechaInicio||"2026-01-01";
+  const proyEnd=proyecto.fechaLanzamiento||"2026-12-31";
+
+  const [escala,setEscala]=useState("meses");
+  const [vistaInicio,setVistaInicio]=useState(proyStart.slice(0,7)); // YYYY-MM
+  const [vistaFin,setVistaFin]=useState(proyEnd.slice(0,7));
+
   const barColor={Completado:PAL.teal,"En progreso":proyecto.color,Pendiente:"#D1D5DB",Bloqueado:PAL.red,Retrasado:"#7F1D1D"};
-  const exportCSV=()=>{
-    const header=["Etapa","Responsable","Fecha Inicio","Fecha Fin","Status","Ents completados","Ents totales"];
-    const rows=proyecto.etapas.map(e=>[`"${e.label}"`,`"${e.responsable||""}"`,e.fechaInicio||"",e.fechaFin||"",e.status,e.entregables.filter(x=>x.done).length,e.entregables.length]);
-    const csv=[header,...rows].map(r=>r.join(",")).join("\n");
-    const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});
-    const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`Gantt_${proyecto.nombre}.csv`;a.click();URL.revokeObjectURL(url);
-  };
-  const scroll=(dir)=>{ if(ganttRef.current) ganttRef.current.scrollLeft+=dir*250; };
-  // Generar columnas
+  const bodyRef=useRef(null);
+  const headerRef=useRef(null);
+
+  // rango visible
+  const vStart=new Date(vistaInicio+"-01");
+  const vEnd=new Date(vistaFin+"-01"); vEnd.setMonth(vEnd.getMonth()+1); vEnd.setDate(vEnd.getDate()-1);
+  const totalDays=Math.max(1,Math.ceil((vEnd-vStart)/86400000));
+  const todayPct=Math.min(100,Math.max(0,Math.ceil((today-vStart)/86400000)/totalDays*100));
+
+  const pct=(d)=>{ if(!d)return null; const dt=new Date(d+"T12:00:00"); return Math.min(100,Math.max(0,Math.ceil((dt-vStart)/86400000)/totalDays*100)); };
+
+  // Generar columnas encabezado
   const columnas=[];
   if(escala==="meses"){
-    let cur=new Date(start.getFullYear(),start.getMonth(),1);
-    while(cur<=end){
+    let cur=new Date(vStart.getFullYear(),vStart.getMonth(),1);
+    while(cur<=vEnd){
       const mEnd=new Date(cur.getFullYear(),cur.getMonth()+1,0);
-      const ps=Math.max(0,Math.ceil((cur-start)/86400000)/totalDays*100);
-      const pe=Math.min(100,Math.ceil((mEnd-start)/86400000)/totalDays*100);
+      const ps=Math.max(0,Math.ceil((cur-vStart)/86400000)/totalDays*100);
+      const pe=Math.min(100,Math.ceil((mEnd-vStart)/86400000)/totalDays*100);
       columnas.push({label:cur.toLocaleDateString("es-MX",{month:"short",year:"numeric"}),ps,width:pe-ps});
       cur.setMonth(cur.getMonth()+1);
     }
   } else {
-    let cur=new Date(start); cur.setDate(cur.getDate()-cur.getDay()+1);
-    while(cur<=end){
+    let cur=new Date(vStart); cur.setDate(cur.getDate()-cur.getDay()+1);
+    while(cur<=vEnd){
       const wEnd=new Date(cur); wEnd.setDate(wEnd.getDate()+6);
-      const ps=(Math.ceil((cur-start)/86400000))/totalDays*100;
-      const pe=(Math.ceil((wEnd-start)/86400000)+1)/totalDays*100;
+      const ps=(Math.ceil((cur-vStart)/86400000))/totalDays*100;
+      const pe=(Math.ceil((wEnd-vStart)/86400000)+1)/totalDays*100;
       if(pe>0&&ps<100) columnas.push({label:`${cur.getDate()}/${cur.getMonth()+1}`,ps:Math.max(0,ps),width:Math.max(0,Math.min(100,pe)-Math.max(0,ps))});
       cur.setDate(cur.getDate()+7);
     }
   }
-  const pxPorDia=escala==="semanas"?30:14;
-  const minW=Math.max(700,totalDays*pxPorDia+200);
+
+  const pxPorDia=escala==="semanas"?28:12;
+  const chartW=Math.max(500,totalDays*pxPorDia);
+  const COL_W=200; // ancho columna fija
+
+  // sincronizar scroll horizontal entre header y body
+  const onBodyScroll=()=>{
+    if(headerRef.current&&bodyRef.current) headerRef.current.scrollLeft=bodyRef.current.scrollLeft;
+  };
+  const scrollDir=(dir)=>{ if(bodyRef.current) bodyRef.current.scrollLeft+=dir*250; };
+
+  const exportCSV=()=>{
+    const header=["Etapa","Responsable","Fecha Inicio","Fecha Fin","Status"];
+    const rows=proyecto.etapas.map(e=>[`"${e.label}"`,`"${e.responsable||""}"`,e.fechaInicio||"",e.fechaFin||"",e.status]);
+    const csv=[header,...rows].map(r=>r.join(",")).join("\n");
+    const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});
+    const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`Gantt_${proyecto.nombre}.csv`;a.click();URL.revokeObjectURL(url);
+  };
+
   return(
     <div>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,flexWrap:"wrap",gap:8}}>
-        <div style={{display:"flex",gap:6,alignItems:"center"}}>
-          <span style={{fontSize:13,fontWeight:600,color:PAL.text}}>Gantt — {proyecto.nombre}</span>
-          <button onClick={()=>scroll(-1)} style={{width:28,height:28,borderRadius:7,border:`1px solid ${PAL.border}`,background:PAL.surface,cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",color:PAL.gray}}>&#8249;</button>
-          <button onClick={()=>scroll(1)} style={{width:28,height:28,borderRadius:7,border:`1px solid ${PAL.border}`,background:PAL.surface,cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",color:PAL.gray}}>&#8250;</button>
+      {/* ── Toolbar ── */}
+      <div style={{display:"flex",gap:10,marginBottom:14,flexWrap:"wrap",alignItems:"flex-end"}}>
+        {/* Fechas de vista */}
+        <div style={{display:"flex",gap:8,alignItems:"flex-end",flexWrap:"wrap"}}>
+          <div>
+            <div style={{fontSize:10,color:PAL.gray,marginBottom:3,textTransform:"uppercase",letterSpacing:"0.05em"}}>Desde</div>
+            <input type="month" value={vistaInicio} onChange={e=>setVistaInicio(e.target.value)}
+              style={{padding:"5px 10px",borderRadius:8,border:`1px solid ${PAL.border}`,fontSize:13,outline:"none",background:PAL.surface,fontFamily:"inherit",cursor:"pointer"}}/>
+          </div>
+          <div>
+            <div style={{fontSize:10,color:PAL.gray,marginBottom:3,textTransform:"uppercase",letterSpacing:"0.05em"}}>Hasta</div>
+            <input type="month" value={vistaFin} onChange={e=>setVistaFin(e.target.value)}
+              style={{padding:"5px 10px",borderRadius:8,border:`1px solid ${PAL.border}`,fontSize:13,outline:"none",background:PAL.surface,fontFamily:"inherit",cursor:"pointer"}}/>
+          </div>
+          <button onClick={()=>{setVistaInicio(proyStart.slice(0,7));setVistaFin(proyEnd.slice(0,7));}}
+            style={{padding:"5px 10px",borderRadius:8,border:`1px solid ${PAL.border}`,background:PAL.grayLight,fontSize:12,cursor:"pointer",color:PAL.gray}}>
+            ↺ Resetear
+          </button>
         </div>
-        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+
+        <div style={{marginLeft:"auto",display:"flex",gap:8,alignItems:"center"}}>
+          {/* Escala */}
           <div style={{display:"flex",background:PAL.grayLight,borderRadius:8,padding:2,gap:2}}>
             {[["meses","📅 Meses"],["semanas","📆 Semanas"]].map(([v,l])=>(
               <button key={v} onClick={()=>setEscala(v)}
-                style={{padding:"4px 12px",borderRadius:6,border:"none",background:escala===v?PAL.surface:"transparent",color:escala===v?PAL.teal:PAL.gray,cursor:"pointer",fontSize:12,fontWeight:escala===v?700:400,boxShadow:escala===v?"0 1px 3px rgba(0,0,0,0.1)":"none"}}>
+                style={{padding:"4px 11px",borderRadius:6,border:"none",background:escala===v?PAL.surface:"transparent",color:escala===v?PAL.teal:PAL.gray,cursor:"pointer",fontSize:12,fontWeight:escala===v?700:400,boxShadow:escala===v?"0 1px 3px rgba(0,0,0,0.1)":"none"}}>
                 {l}
               </button>
             ))}
           </div>
-          <Btn v="ghost" onClick={exportCSV} style={{fontSize:12,padding:"5px 14px"}}>📥 Exportar CSV</Btn>
+          {/* Nav */}
+          <button onClick={()=>scrollDir(-1)} style={{width:28,height:28,borderRadius:7,border:`1px solid ${PAL.border}`,background:PAL.surface,cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",color:PAL.gray}}>&#8249;</button>
+          <button onClick={()=>scrollDir(1)} style={{width:28,height:28,borderRadius:7,border:`1px solid ${PAL.border}`,background:PAL.surface,cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",color:PAL.gray}}>&#8250;</button>
+          <Btn v="ghost" onClick={exportCSV} style={{fontSize:12,padding:"5px 12px"}}>📥 CSV</Btn>
         </div>
       </div>
-      <div ref={ganttRef} style={{overflowX:"auto",cursor:"grab",borderRadius:10,border:`1px solid ${PAL.border}`,background:PAL.surface}}
-        onMouseDown={e=>{
-          const el=ganttRef.current;if(!el)return;
-          el.style.cursor="grabbing";
-          let sx=e.pageX,sl=el.scrollLeft;
-          const move=e2=>{el.scrollLeft=sl-(e2.pageX-sx);};
-          const up=()=>{el.style.cursor="grab";document.removeEventListener("mousemove",move);document.removeEventListener("mouseup",up);};
-          document.addEventListener("mousemove",move);document.addEventListener("mouseup",up);
-        }}>
-        <div style={{minWidth:minW,padding:"12px 12px 12px 0"}}>
-          <div style={{display:"flex",marginLeft:190,marginBottom:6}}>
-            {columnas.map((col,i)=>(
-              <div key={i} style={{flex:`0 0 ${col.width}%`,fontSize:escala==="semanas"?9:10,color:PAL.gray,borderLeft:`1px dashed ${PAL.border}`,paddingLeft:4,overflow:"hidden",whiteSpace:"nowrap",fontWeight:500}}>
-                {col.label}
+
+      {/* ── Gantt con columna fija ── */}
+      <div style={{border:`1px solid ${PAL.border}`,borderRadius:12,overflow:"hidden",background:PAL.surface}}>
+        {/* Header row */}
+        <div style={{display:"flex",borderBottom:`1px solid ${PAL.border}`,background:"#F8F9FF"}}>
+          {/* Columna fija — header */}
+          <div style={{width:COL_W,flexShrink:0,padding:"8px 12px",fontSize:11,fontWeight:700,color:PAL.gray,borderRight:`1px solid ${PAL.border}`,textTransform:"uppercase",letterSpacing:"0.05em",background:"#F8F9FF",zIndex:2}}>
+            Etapa
+          </div>
+          {/* Meses / semanas header — scrollable pero sincronizado */}
+          <div ref={headerRef} style={{flex:1,overflowX:"hidden",pointerEvents:"none"}}>
+            <div style={{display:"flex",width:chartW}}>
+              {columnas.map((col,i)=>(
+                <div key={i} style={{flex:`0 0 ${col.width}%`,fontSize:escala==="semanas"?9:10,color:PAL.gray,borderLeft:`1px dashed ${PAL.border}`,paddingLeft:5,paddingTop:8,paddingBottom:8,overflow:"hidden",whiteSpace:"nowrap",fontWeight:600}}>
+                  {col.label}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Body — scrollable */}
+        <div style={{display:"flex"}}>
+          {/* Columna fija — etapas */}
+          <div style={{width:COL_W,flexShrink:0,borderRight:`1px solid ${PAL.border}`,background:PAL.surface,zIndex:2}}>
+            {proyecto.etapas.map(etapa=>(
+              <div key={etapa.id} style={{display:"flex",alignItems:"center",gap:6,padding:"6px 10px",borderBottom:`1px solid ${PAL.border+"88"}`,height:36}}>
+                <span style={{fontSize:13,flexShrink:0}}>{etapa.icon}</span>
+                <span style={{fontSize:11,color:PAL.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontWeight:500}}>{etapa.label}</span>
               </div>
             ))}
+            {/* Fila lanzamiento */}
+            <div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 10px",height:32,background:"#EEF4FF"}}>
+              <span style={{fontSize:13}}>🚀</span>
+              <span style={{fontSize:11,color:"#1D4ED8",fontWeight:700}}>Lanzamiento</span>
+            </div>
           </div>
-          <div style={{position:"relative"}}>
-            <div style={{position:"absolute",left:`calc(190px + ${todayPct}%)`,top:0,bottom:0,width:2,background:PAL.red,zIndex:3,opacity:0.7}}/>
-            {proyecto.etapas.map(etapa=>{
-              const s=etapa.fechaInicio?new Date(etapa.fechaInicio):null;
-              const e=etapa.fechaFin?new Date(etapa.fechaFin):null;
-              let sp=0,width=1;
-              if(s&&e){sp=Math.max(0,Math.ceil((s-start)/86400000)/totalDays*100);const ep=Math.min(100,Math.ceil((e-start)/86400000)/totalDays*100);width=Math.max(0.5,ep-sp);}
-              else if(s){sp=Math.max(0,Math.ceil((s-start)/86400000)/totalDays*100);width=escala==="semanas"?1.5:0.8;}
-              return(
-                <div key={etapa.id} style={{display:"flex",alignItems:"center",marginBottom:6}}>
-                  <div style={{width:190,flexShrink:0,fontSize:12,color:PAL.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",paddingRight:10,paddingLeft:12,display:"flex",alignItems:"center",gap:5}}>
-                    <span style={{fontSize:14}}>{etapa.icon}</span><span>{etapa.label}</span>
+
+          {/* Área de barras — scrollable */}
+          <div ref={bodyRef} onScroll={onBodyScroll}
+            style={{flex:1,overflowX:"auto",cursor:"grab",position:"relative"}}
+            onMouseDown={e=>{
+              const el=bodyRef.current;if(!el)return;
+              el.style.cursor="grabbing";
+              let sx=e.pageX,sl=el.scrollLeft;
+              const move=e2=>{el.scrollLeft=sl-(e2.pageX-sx);};
+              const up=()=>{el.style.cursor="grab";document.removeEventListener("mousemove",move);document.removeEventListener("mouseup",up);};
+              document.addEventListener("mousemove",move);document.addEventListener("mouseup",up);
+            }}>
+            <div style={{width:chartW,position:"relative"}}>
+              {/* Línea hoy */}
+              {todayPct>=0&&todayPct<=100&&(
+                <div style={{position:"absolute",left:`${todayPct}%`,top:0,bottom:0,width:2,background:PAL.red,opacity:0.7,zIndex:3,pointerEvents:"none"}}/>
+              )}
+              {/* Franjas de columnas de fondo */}
+              <div style={{position:"absolute",inset:0,display:"flex",pointerEvents:"none"}}>
+                {columnas.map((col,i)=>(
+                  <div key={i} style={{flex:`0 0 ${col.width}%`,borderLeft:`1px dashed ${PAL.border}`,background:i%2===0?"transparent":"rgba(0,0,0,0.015)"}}/>
+                ))}
+              </div>
+              {/* Barras por etapa */}
+              {proyecto.etapas.map(etapa=>{
+                const sp=pct(etapa.fechaInicio);
+                const ep=pct(etapa.fechaFin);
+                const hasBar=sp!==null||ep!==null;
+                const barLeft=sp??ep??0;
+                const barW=sp!==null&&ep!==null?Math.max(0.5,ep-sp):1;
+                return(
+                  <div key={etapa.id} style={{height:36,borderBottom:`1px solid ${PAL.border+"88"}`,display:"flex",alignItems:"center",position:"relative"}}>
+                    <div style={{position:"absolute",inset:"4px 0",background:"#F3F4F6",borderRadius:4,overflow:"hidden"}}>
+                      {hasBar&&(
+                        <div style={{position:"absolute",left:`${barLeft}%`,width:`${barW}%`,top:0,bottom:0,background:barColor[etapa.status]||"#D1D5DB",borderRadius:4,opacity:0.9,display:"flex",alignItems:"center",paddingLeft:6,minWidth:4}}>
+                          {barW>5&&<span style={{fontSize:9,color:"#fff",whiteSpace:"nowrap",overflow:"hidden",fontWeight:500}}>{etapa.responsable}</span>}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div style={{flex:1,height:24,background:"#F3F4F6",borderRadius:6,position:"relative",overflow:"hidden"}}>
-                    {(s||e)&&<div style={{position:"absolute",left:`${sp}%`,width:`${width}%`,height:"100%",background:barColor[etapa.status]||"#D1D5DB",borderRadius:5,display:"flex",alignItems:"center",paddingLeft:6,minWidth:4,opacity:0.9}}>
-                      {width>3&&<span style={{fontSize:9,color:"#fff",whiteSpace:"nowrap",overflow:"hidden",fontWeight:500}}>{etapa.responsable}</span>}
-                    </div>}
-                  </div>
-                  <div style={{flexShrink:0,marginLeft:6}}><Badge label={etapa.status}/></div>
-                </div>
-              );
-            })}
+                );
+              })}
+              {/* Fila lanzamiento */}
+              <div style={{height:32,background:"#EEF4FF",display:"flex",alignItems:"center",position:"relative"}}>
+                {pct(proyecto.fechaLanzamiento)!==null&&(
+                  <div style={{position:"absolute",left:`${pct(proyecto.fechaLanzamiento)}%`,transform:"translateX(-50%)",fontSize:16,zIndex:4}}>🚀</div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Leyenda */}
       <div style={{display:"flex",gap:14,marginTop:10,flexWrap:"wrap",fontSize:11,color:PAL.gray,alignItems:"center"}}>
         {[["Completado",PAL.teal],["En progreso",proyecto.color],["Retrasado",PAL.red],["Pendiente","#D1D5DB"]].map(([l,c])=>(
           <span key={l} style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:10,height:10,borderRadius:2,background:c,display:"inline-block"}}/>{l}</span>
         ))}
-        <span style={{marginLeft:"auto",color:PAL.gray,fontSize:10}}>Arrastra o usa ‹ › para navegar</span>
+        <span style={{marginLeft:"auto",fontSize:10}}>Arrastra o usa ‹ › · Ajusta el rango de fechas arriba</span>
       </div>
     </div>
   );
