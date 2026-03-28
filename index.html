@@ -94,6 +94,18 @@ const progreso = p => { const d=p.etapas.filter(e=>e.status==="Completado").leng
 const diasR = f => Math.ceil((new Date(f)-new Date())/86400000);
 const fmtDate = d => { if(!d)return""; const dt=new Date(d+"T12:00:00"); return dt.toLocaleDateString("es-MX",{day:"2-digit",month:"short"}); };
 
+// Color dinámico para fechas según estado y comparación con hoy
+const dateColor = (dateStr, status) => {
+  if(!dateStr) return {c:PAL.gray, bg:PAL.grayLight};
+  const today = new Date(); today.setHours(0,0,0,0);
+  const d = new Date(dateStr+"T12:00:00");
+  if(status==="Completado") return {c:PAL.green, bg:PAL.greenLight};         // verde: cumplido
+  if(status==="En progreso") return {c:"#1D4ED8", bg:"#DBEAFE"};             // azul: en proceso
+  if(status==="Pendiente" && d > today) return {c:"#1D4ED8", bg:"#DBEAFE"}; // azul: aún no inicia
+  if(d < today) return {c:PAL.red, bg:PAL.redLight};                         // rojo: vencido
+  return {c:PAL.gray, bg:PAL.grayLight};
+};
+
 const PROYECTOS_EJEMPLO = [
   {id:1,nombre:"Genocurol",tipo:"Lanzamiento nuevo",categoria:"OTC",forma:"Tableta",cliente:"Genomma Lab",maquilador:"MMN",pais:"México",color:"#0D7377",responsable:"Marycarmen Reséndiz",fechaInicio:"2026-01-10",fechaLanzamiento:"2026-08-30",descripcion:"Analgésico/antiinflamatorio OTC.",equipo:EQUIPO_INICIAL,
     etapas:ETAPAS_DEF.map((e,i)=>({...e,status:i<5?"Completado":i===5?"En progreso":"Pendiente",fechaInicio:i===0?"2026-01-10":i===1?"2026-01-20":i===2?"2026-02-01":i===3?"2026-02-15":i===4?"2026-03-01":i===5?"2026-03-15":"",fechaFin:i===0?"2026-01-18":i===1?"2026-01-28":i===2?"2026-02-10":i===3?"2026-02-28":i===4?"2026-03-10":"",responsable:i<3?"Anabel Zárate":"Marycarmen Reséndiz",notas:"",entregables:(ENTREGABLES_DEF[e.id]||[]).map(d=>({id:uid(),desc:d,done:i<5}))})),
@@ -330,8 +342,8 @@ function Pipeline({proyecto,onEtapaClick,grande=false}){
                 {/* Fechas */}
                 {(etapa.fechaInicio||etapa.fechaFin)&&(
                   <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,marginTop:1}}>
-                    {etapa.fechaInicio&&<span style={{fontSize:dateSz,color:PAL.teal,fontWeight:600,background:PAL.tealLight,borderRadius:3,padding:`1px ${grande?6:4}px`}}>{fmtDate(etapa.fechaInicio)}</span>}
-                    {etapa.fechaFin&&<span style={{fontSize:dateSz,color:PAL.amber,fontWeight:600,background:PAL.amberLight,borderRadius:3,padding:`1px ${grande?6:4}px`}}>{fmtDate(etapa.fechaFin)}</span>}
+                    {etapa.fechaInicio&&(()=>{const dc=dateColor(etapa.fechaInicio,etapa.status);return <span style={{fontSize:dateSz,color:dc.c,fontWeight:600,background:dc.bg,borderRadius:3,padding:`1px ${grande?6:4}px`}}>▶ {fmtDate(etapa.fechaInicio)}</span>;})()}
+                    {etapa.fechaFin&&(()=>{const dc=dateColor(etapa.fechaFin,etapa.status);return <span style={{fontSize:dateSz,color:dc.c,fontWeight:600,background:dc.bg,borderRadius:3,padding:`1px ${grande?6:4}px`}}>⏱ {fmtDate(etapa.fechaFin)}</span>;})()}
                   </div>
                 )}
               </div>
@@ -892,13 +904,14 @@ function TiposProyectoModal({tipos,onSave,onClose}){
 
 // ─── PESTAÑA ARCHIVOS ─────────────────────────────────────────────────────────
 function ArchivosTab({proyecto}){
-  // Recopilar todos los archivos de todas las etapas
   const todos=[];
   proyecto.etapas.forEach(etapa=>{
-    (etapa.archivos||[]).forEach(arch=>{
-      todos.push({...arch,etapa:etapa.label,etapaIcon:etapa.icon});
-    });
+    (etapa.archivos||[]).forEach(arch=>todos.push({...arch,etapa:etapa.label,etapaIcon:etapa.icon}));
   });
+
+  const [preview,setPreview]=useState(null);
+  const [descargando,setDescargando]=useState(false);
+  const [zipMsg,setZipMsg]=useState("");
 
   const imgTipos=["image/jpeg","image/png","image/gif","image/webp","image/svg+xml"];
   const iconPorTipo=(tipo)=>{
@@ -910,105 +923,105 @@ function ArchivosTab({proyecto}){
     if(tipo.includes("presentation")||tipo.includes("powerpoint"))return"📋";
     return"📎";
   };
-
-  if(todos.length===0) return(
-    <div style={{textAlign:"center",padding:"48px 0",color:PAL.gray}}>
-      <div style={{fontSize:40,marginBottom:12}}>📂</div>
-      <div style={{fontSize:15,fontWeight:600,color:PAL.text,marginBottom:6}}>Sin archivos adjuntos</div>
-      <div style={{fontSize:13}}>Adjunta archivos desde cada etapa del proceso haciendo clic en ella.</div>
-    </div>
-  );
-
-  const imagenes=todos.filter(a=>imgTipos.includes(a.tipo));
-  const otros=todos.filter(a=>!imgTipos.includes(a.tipo));
-  const [descargando,setDescargando]=useState(false);
-  const [zipMsg,setZipMsg]=useState("");
+  const esImagen=(tipo)=>imgTipos.includes(tipo);
+  const esPDF=(tipo)=>tipo&&tipo.includes("pdf");
 
   const descargarTodos=async()=>{
     if(!todos.length)return;
     setDescargando(true);setZipMsg("Preparando ZIP…");
     try{
-      if(!window.JSZip){
-        await new Promise((res,rej)=>{const s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";s.onload=res;s.onerror=rej;document.head.appendChild(s);});
-      }
+      if(!window.JSZip) await new Promise((res,rej)=>{const s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";s.onload=res;s.onerror=rej;document.head.appendChild(s);});
       const zip=new window.JSZip();
       const carpeta=zip.folder(proyecto.nombre);
-      todos.forEach(arch=>{
-        try{
-          const b64=arch.url.split(",")[1];
-          const etapaNombre=(arch.etapa||"General").replace(/[^\w\sáéíóúñÁÉÍÓÚÑ]/g,"").trim();
-          carpeta.folder(etapaNombre).file(arch.nombre,b64,{base64:true});
-        }catch(e){}
-      });
+      todos.forEach(arch=>{try{const b64=arch.url.split(",")[1];carpeta.folder((arch.etapa||"General").replace(/[^\w\sáéíóúñ]/gi,"").trim()).file(arch.nombre,b64,{base64:true});}catch(e){}});
       setZipMsg("Generando ZIP…");
       const blob=await zip.generateAsync({type:"blob"});
       const url=URL.createObjectURL(blob);
       const a=document.createElement("a");a.href=url;a.download=`${proyecto.nombre}_archivos.zip`;a.click();URL.revokeObjectURL(url);
-      setZipMsg("✅ Descarga lista");
-      setTimeout(()=>setZipMsg(""),3000);
+      setZipMsg("✅ Descarga lista");setTimeout(()=>setZipMsg(""),3000);
     }catch(e){setZipMsg("Error al generar ZIP");}
     setDescargando(false);
   };
 
+  if(todos.length===0) return(
+    <div style={{textAlign:"center",padding:"48px 0",color:PAL.gray}}>
+      <div style={{fontSize:40,marginBottom:12}}>📂</div>
+      <div style={{fontSize:15,fontWeight:600,color:PAL.text,marginBottom:6}}>Sin archivos adjuntos</div>
+      <div style={{fontSize:13}}>Adjunta archivos desde cada etapa haciendo clic en ella.</div>
+    </div>
+  );
+
   return(
     <div>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,flexWrap:"wrap",gap:8}}>
-        <span style={{fontSize:13,color:PAL.gray}}>
-          {todos.length} archivo(s) en {proyecto.etapas.filter(e=>(e.archivos||[]).length>0).length} etapa(s)
-        </span>
-        {todos.length>0&&(
-          <div style={{display:"flex",alignItems:"center",gap:10}}>
-            {zipMsg&&<span style={{fontSize:12,color:zipMsg.startsWith("✅")?PAL.green:PAL.teal,fontWeight:500}}>{zipMsg}</span>}
-            <button onClick={descargarTodos} disabled={descargando}
-              style={{display:"flex",alignItems:"center",gap:7,padding:"8px 16px",borderRadius:9,border:"none",background:descargando?PAL.grayLight:PAL.teal,color:descargando?PAL.gray:"#fff",cursor:descargando?"not-allowed":"pointer",fontSize:13,fontWeight:600}}>
-              {descargando
-                ?<><span style={{width:14,height:14,border:"2px solid #ccc",borderTopColor:PAL.teal,borderRadius:"50%",display:"inline-block",animation:"spin 0.8s linear infinite"}}/>Generando…</>
-                :<>⬇ Descargar todo ({todos.length} archivos)</>}
-            </button>
-          </div>
-        )}
+        <span style={{fontSize:13,color:PAL.gray}}>{todos.length} archivo(s) en {proyecto.etapas.filter(e=>(e.archivos||[]).length>0).length} etapa(s)</span>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          {zipMsg&&<span style={{fontSize:12,color:zipMsg.startsWith("✅")?PAL.green:PAL.teal,fontWeight:500}}>{zipMsg}</span>}
+          <button onClick={descargarTodos} disabled={descargando}
+            style={{display:"flex",alignItems:"center",gap:7,padding:"8px 16px",borderRadius:9,border:"none",background:descargando?PAL.grayLight:PAL.teal,color:descargando?PAL.gray:"#fff",cursor:descargando?"not-allowed":"pointer",fontSize:13,fontWeight:600}}>
+            {descargando?<><span style={{width:14,height:14,border:"2px solid #ccc",borderTopColor:PAL.teal,borderRadius:"50%",display:"inline-block",animation:"spin 0.8s linear infinite"}}/>Generando…</>:<>⬇ Descargar todo ({todos.length})</>}
+          </button>
+        </div>
       </div>
 
-      {imagenes.length>0&&(
-        <div style={{marginBottom:24}}>
-          <div style={{fontSize:13,fontWeight:700,color:PAL.text,marginBottom:12}}>🖼️ Imágenes ({imagenes.length})</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:10}}>
-            {imagenes.map((arch,i)=>(
-              <div key={i} style={{background:PAL.surface,border:`1px solid ${PAL.border}`,borderRadius:10,overflow:"hidden"}}>
-                <div style={{height:120,background:"#f8f8f8",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
-                  <img src={arch.url} alt={arch.nombre} style={{width:"100%",height:"100%",objectFit:"contain"}}/>
-                </div>
-                <div style={{padding:"7px 10px"}}>
-                  <div style={{fontSize:11,fontWeight:600,color:PAL.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{arch.nombre}</div>
-                  <div style={{fontSize:10,color:PAL.gray,marginTop:2}}>{arch.etapaIcon} {arch.etapa}</div>
-                  <a href={arch.url} download={arch.nombre} style={{display:"block",marginTop:6,fontSize:11,color:PAL.teal,textDecoration:"none",fontWeight:500}}>⬇ Descargar</a>
-                </div>
-              </div>
-            ))}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(170px,1fr))",gap:12}}>
+        {todos.map((arch,i)=>(
+          <div key={i} onClick={()=>setPreview(arch)}
+            style={{background:PAL.surface,border:`1px solid ${PAL.border}`,borderRadius:12,overflow:"hidden",cursor:"pointer",transition:"box-shadow 0.2s,transform 0.15s"}}
+            onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 4px 16px rgba(0,0,0,0.12)";e.currentTarget.style.transform="translateY(-2px)";}}
+            onMouseLeave={e=>{e.currentTarget.style.boxShadow="none";e.currentTarget.style.transform="none";}}>
+            <div style={{height:110,background:"#F5F6FA",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
+              {esImagen(arch.tipo)
+                ?<img src={arch.url} alt={arch.nombre} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                :<div style={{textAlign:"center"}}><div style={{fontSize:40}}>{iconPorTipo(arch.tipo)}</div><div style={{fontSize:10,color:PAL.gray,fontWeight:600,marginTop:4}}>{arch.nombre.split(".").pop().toUpperCase()}</div></div>}
+            </div>
+            <div style={{padding:"8px 10px"}}>
+              <div style={{fontSize:11,fontWeight:600,color:PAL.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{arch.nombre}</div>
+              <div style={{fontSize:10,color:PAL.gray,marginTop:2}}>{arch.etapaIcon} {arch.etapa}</div>
+              <a href={arch.url} download={arch.nombre} onClick={e=>e.stopPropagation()}
+                style={{display:"inline-block",marginTop:5,fontSize:11,color:PAL.teal,textDecoration:"none",fontWeight:500}}>⬇ Descargar</a>
+            </div>
           </div>
-        </div>
-      )}
+        ))}
+      </div>
 
-      {otros.length>0&&(
-        <div>
-          <div style={{fontSize:13,fontWeight:700,color:PAL.text,marginBottom:12}}>📎 Documentos ({otros.length})</div>
-          <div style={{display:"flex",flexDirection:"column",gap:8}}>
-            {otros.map((arch,i)=>(
-              <div key={i} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",background:PAL.surface,border:`1px solid ${PAL.border}`,borderRadius:10}}>
-                <span style={{fontSize:24,flexShrink:0}}>{iconPorTipo(arch.tipo)}</span>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:13,fontWeight:600,color:PAL.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{arch.nombre}</div>
-                  <div style={{fontSize:11,color:PAL.gray,marginTop:2}}>{arch.etapaIcon} {arch.etapa}</div>
-                </div>
-                <a href={arch.url} download={arch.nombre} style={{flexShrink:0,padding:"5px 12px",borderRadius:7,background:PAL.tealLight,color:PAL.teal,textDecoration:"none",fontSize:12,fontWeight:500}}>⬇ Descargar</a>
+      {preview&&ReactDOM.createPortal(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}
+          onClick={()=>setPreview(null)}>
+          <div style={{background:"#fff",borderRadius:16,overflow:"hidden",maxWidth:"90vw",maxHeight:"90vh",display:"flex",flexDirection:"column",boxShadow:"0 20px 60px rgba(0,0,0,0.5)"}}
+            onClick={e=>e.stopPropagation()}>
+            <div style={{display:"flex",alignItems:"center",gap:10,padding:"12px 16px",borderBottom:`1px solid ${PAL.border}`,background:"#FAFAFA"}}>
+              <span style={{fontSize:20}}>{iconPorTipo(preview.tipo)}</span>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:13,fontWeight:700,color:PAL.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{preview.nombre}</div>
+                <div style={{fontSize:11,color:PAL.gray}}>{preview.etapaIcon} {preview.etapa}</div>
               </div>
-            ))}
+              <a href={preview.url} download={preview.nombre}
+                style={{padding:"5px 12px",borderRadius:7,background:PAL.tealLight,color:PAL.teal,textDecoration:"none",fontSize:12,fontWeight:600,flexShrink:0}}>⬇ Descargar</a>
+              <button onClick={()=>setPreview(null)}
+                style={{width:30,height:30,borderRadius:"50%",background:PAL.grayLight,border:"none",cursor:"pointer",fontSize:16,color:PAL.gray,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>✕</button>
+            </div>
+            <div style={{flex:1,overflow:"auto",display:"flex",alignItems:"center",justifyContent:"center",minHeight:300,padding:8,background:"#F5F6FA"}}>
+              {esImagen(preview.tipo)
+                ?<img src={preview.url} alt={preview.nombre} style={{maxWidth:"85vw",maxHeight:"75vh",objectFit:"contain",borderRadius:8}}/>
+                :esPDF(preview.tipo)
+                ?<iframe src={preview.url} style={{width:"80vw",height:"75vh",border:"none",borderRadius:8}} title={preview.nombre}/>
+                :<div style={{textAlign:"center",padding:40}}>
+                    <div style={{fontSize:60,marginBottom:16}}>{iconPorTipo(preview.tipo)}</div>
+                    <div style={{fontSize:15,fontWeight:600,color:PAL.text,marginBottom:8}}>{preview.nombre}</div>
+                    <div style={{fontSize:13,color:PAL.gray,marginBottom:20}}>Vista previa no disponible para este tipo de archivo.</div>
+                    <a href={preview.url} download={preview.nombre}
+                      style={{padding:"10px 24px",borderRadius:9,background:PAL.teal,color:"#fff",textDecoration:"none",fontSize:14,fontWeight:600}}>⬇ Descargar archivo</a>
+                  </div>}
+            </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
 }
+
 
 // ─── MODAL MAQUILADORES ───────────────────────────────────────────────────────
 function MaquiladoresModal({maquiladores,onSave,onClose}){
@@ -1111,8 +1124,8 @@ function FullscreenPipeline({proyecto,onClose}){
           {etapaSelec.responsable&&<div style={{fontSize:12,color:PAL.gray,marginBottom:10,display:"flex",alignItems:"center",gap:6}}><Avatar nombre={etapaSelec.responsable} size={20}/>{etapaSelec.responsable}</div>}
           {(etapaSelec.fechaInicio||etapaSelec.fechaFin)&&(
             <div style={{display:"flex",gap:8,marginBottom:12,flexWrap:"wrap"}}>
-              {etapaSelec.fechaInicio&&<span style={{fontSize:11,background:PAL.tealLight,color:PAL.teal,borderRadius:5,padding:"2px 8px",fontWeight:600}}>▶ Inicio: {etapaSelec.fechaInicio}</span>}
-              {etapaSelec.fechaFin&&<span style={{fontSize:11,background:PAL.amberLight,color:PAL.amber,borderRadius:5,padding:"2px 8px",fontWeight:600}}>⏱ Compromiso: {etapaSelec.fechaFin}</span>}
+              {etapaSelec.fechaInicio&&(()=>{const dc=dateColor(etapaSelec.fechaInicio,etapaSelec.status);return <span style={{fontSize:11,background:dc.bg,color:dc.c,borderRadius:5,padding:"2px 8px",fontWeight:600}}>▶ Inicio: {etapaSelec.fechaInicio}</span>;})()}
+              {etapaSelec.fechaFin&&(()=>{const dc=dateColor(etapaSelec.fechaFin,etapaSelec.status);return <span style={{fontSize:11,background:dc.bg,color:dc.c,borderRadius:5,padding:"2px 8px",fontWeight:600}}>⏱ Compromiso: {etapaSelec.fechaFin}</span>;})()}
             </div>
           )}
           <div style={{fontSize:12,fontWeight:600,color:PAL.text,marginBottom:8}}>
@@ -1293,7 +1306,7 @@ function VistaProyecto({proyecto,equipoGlobal,onUpdate,onBack,esAdmin}){
               const done=etapa.status==="Completado";const isActual=etapa.status==="En progreso";const isRetrasado=etapa.status==="Retrasado";const entsDone=etapa.entregables.filter(e=>e.done).length;
               return(<div key={etapa.id} onClick={esAdmin?()=>setModalEtapa({etapa,idx:i}):undefined} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",background:done?PAL.greenLight:isActual?PAL.tealLight:isRetrasado?PAL.redLight:PAL.surface,border:`1px solid ${done?PAL.green+"44":isActual?PAL.teal+"44":isRetrasado?PAL.red+"66":PAL.border}`,borderRadius:10,cursor:esAdmin?"pointer":"default",animation:isRetrasado?"retrasado-pulse 2s ease-in-out infinite":undefined}}>
                 <span style={{fontSize:18}}>{etapa.icon}</span>
-                <div style={{flex:1}}><div style={{fontSize:13,fontWeight:600,color:done?PAL.green:isActual?PAL.teal:isRetrasado?PAL.red:PAL.text}}>{etapa.label}</div><div style={{fontSize:11,color:PAL.gray,display:"flex",gap:10,flexWrap:"wrap"}}><span>{entsDone}/{etapa.entregables.length} entregables</span>{etapa.fechaInicio&&<span>▶ {etapa.fechaInicio}</span>}{etapa.fechaFin&&<span>⏱ {etapa.fechaFin}</span>}{etapa.responsable&&<span>👤 {etapa.responsable}</span>}</div></div>
+                <div style={{flex:1}}><div style={{fontSize:13,fontWeight:600,color:done?PAL.green:isActual?PAL.teal:isRetrasado?PAL.red:PAL.text}}>{etapa.label}</div><div style={{fontSize:11,color:PAL.gray,display:"flex",gap:8,flexWrap:"wrap",marginTop:2}}><span>{entsDone}/{etapa.entregables.length} entregables</span>{etapa.fechaInicio&&(()=>{const dc=dateColor(etapa.fechaInicio,etapa.status);return <span style={{color:dc.c,fontWeight:600,background:dc.bg,borderRadius:4,padding:"1px 6px"}}>▶ {etapa.fechaInicio}</span>;})()}{etapa.fechaFin&&(()=>{const dc=dateColor(etapa.fechaFin,etapa.status);return <span style={{color:dc.c,fontWeight:600,background:dc.bg,borderRadius:4,padding:"1px 6px"}}>⏱ {etapa.fechaFin}</span>;})()}{etapa.responsable&&<span>👤 {etapa.responsable}</span>}</div></div>
                 <div style={{display:"flex",gap:8,alignItems:"center"}}><Badge label={etapa.status}/>{isActual&&<span style={{fontSize:11,background:proyecto.color+"22",color:proyecto.color,padding:"2px 8px",borderRadius:10,fontWeight:600}}>Actual</span>}{isRetrasado&&<span style={{fontSize:11,background:PAL.red+"22",color:PAL.red,padding:"2px 8px",borderRadius:10,fontWeight:700}}>⚠ Retrasada</span>}</div>
               </div>);
             })}
