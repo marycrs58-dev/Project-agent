@@ -313,7 +313,7 @@ function EtapaModal({etapa,idx,proyecto,onSave,onClose}){
   const toggleEnt=(i)=>{const ents=[...form.entregables];ents[i]={...ents[i],done:!ents[i].done};set("entregables",ents);};
   const delEnt=(i)=>set("entregables",form.entregables.filter((_,j)=>j!==i));
   const addEnt=()=>{if(!nuevoEnt.trim())return;set("entregables",[...form.entregables,{id:uid(),desc:nuevoEnt.trim(),done:false}]);setNuevoEnt("");};
-  const nombres=[...new Set(proyecto.equipo.map(e=>e.nombre))];
+  const nombres=[...new Set((Array.isArray(proyecto.equipo)?proyecto.equipo:[]).map(e=>e.nombre))];
   return(<Overlay><div style={{background:PAL.surface,borderRadius:16,padding:26,width:"92%",maxWidth:520,maxHeight:"90vh",overflowY:"auto"}}>
     <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:20}}>
       <span style={{fontSize:22}}>{etapa.icon}</span>
@@ -509,7 +509,7 @@ function CalendarioTab({proyecto}){
 function TareaModal({tarea,equipo,onSave,onClose}){
   const [form,setForm]=useState(tarea||{nombre:"",responsable:"",fechaLimite:"",status:"Pendiente",prioridad:"Media",notas:""});
   const set=(k,v)=>setForm(f=>({...f,[k]:v}));
-  const nombres=[...new Set(equipo.map(e=>e.nombre))];
+  const nombres=[...new Set((Array.isArray(equipo)?equipo:[]).map(e=>e.nombre))];
   return(<Overlay><div style={{background:PAL.surface,borderRadius:16,padding:24,width:"92%",maxWidth:440}}>
     <div style={{fontSize:15,fontWeight:700,color:PAL.text,marginBottom:18}}>{tarea?"Editar tarea":"Nueva tarea"}</div>
     <div style={{display:"flex",flexDirection:"column",gap:12}}>
@@ -534,7 +534,7 @@ function MinutaModal({proyecto,onSave,onClose}){
   const [fase,setFase]=useState("form");
   const [form,setForm]=useState({titulo:"",fecha:new Date().toISOString().slice(0,10),asistentes:[],acuerdos:"",proximos:"",linkTeams:""});
   const set=(k,v)=>setForm(f=>({...f,[k]:v}));
-  const nombres=[...new Set(proyecto.equipo.map(e=>e.nombre))];
+  const nombres=[...new Set((Array.isArray(proyecto.equipo)?proyecto.equipo:[]).map(e=>e.nombre))];
   const toggleAs=(n)=>setForm(f=>({...f,asistentes:f.asistentes.includes(n)?f.asistentes.filter(a=>a!==n):[...f.asistentes,n]}));
   const entrarTeams=()=>{if(form.linkTeams)window.open(form.linkTeams,"_blank");setFase("teams");};
   const generarMinuta=()=>{setFase("generando");setTimeout(()=>setFase("done"),2000);};
@@ -601,16 +601,17 @@ function TeamsModal({tareas,onClose}){
 // ─── MODAL PROYECTO ────────────────────────────────────────────────────────────
 function ProyectoModal({proyecto,equipoGlobal,maquiladoresProp,onSave,onClose}){
   const maqList = maquiladoresProp||MAQUILADORES;
+  const equipoArr = Array.isArray(equipoGlobal)?equipoGlobal:EQUIPO_INICIAL;
   const blank={nombre:"",tipo:"",categoria:"OTC",forma:"Tableta",cliente:"",maquilador:"MMN",pais:"México",responsable:"Marycarmen Reséndiz",fechaInicio:"",fechaLanzamiento:"",descripcion:"",color:"#0D7377"};
   const [form,setForm]=useState(proyecto?{...proyecto}:blank);
-  const [equipoCheck,setEquipoCheck]=useState(equipoGlobal.map(e=>proyecto?proyecto.equipo.some(pe=>pe.id===e.id):true));
+  const [equipoCheck,setEquipoCheck]=useState(equipoArr.map(e=>proyecto?proyecto.equipo.some(pe=>pe.id===e.id):true));
   const set=(k,v)=>setForm(f=>({...f,[k]:v}));
   const colores=["#0D7377","#7B3FA0","#C8841A","#1E7E4E","#C0392B","#1A5276","#7D6608"];
-  const handleMaq=(v)=>{const m=MAQUILADORES.find(x=>x.nombre===v);set("maquilador",v);if(m)set("pais",m.pais);};
-  const nombres=[...new Set(equipoGlobal.map(e=>e.nombre))];
+  const handleMaq=(v)=>{const m=maqList.find(x=>x.nombre===v);set("maquilador",v);if(m)set("pais",m.pais);};
+  const nombres=[...new Set(equipoArr.map(e=>e.nombre))];
   const handleSave=()=>{
     if(!form.nombre||!form.cliente)return;
-    const equipoSel=equipoGlobal.filter((_,i)=>equipoCheck[i]);
+    const equipoSel=equipoArr.filter((_,i)=>equipoCheck[i]);
     const etapas=proyecto?proyecto.etapas:mkEtapas();
     onSave({...form,equipo:equipoSel,etapas,tareas:proyecto?.tareas||[],minutas:proyecto?.minutas||[]});
     onClose();
@@ -642,7 +643,7 @@ function ProyectoModal({proyecto,equipoGlobal,maquiladoresProp,onSave,onClose}){
       <Field label="Descripción"><textarea value={form.descripcion} onChange={e=>set("descripcion",e.target.value)} rows={2} style={{width:"100%",padding:"8px 11px",borderRadius:7,border:`1px solid ${PAL.border}`,fontSize:13,resize:"none",boxSizing:"border-box",outline:"none",fontFamily:"inherit"}}/></Field>
       <Field label="Equipo asignado">
         <div style={{display:"flex",flexDirection:"column",gap:6,marginTop:4}}>
-          {equipoGlobal.map((e,i)=>(<label key={e.id} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 10px",borderRadius:7,background:equipoCheck[i]?PAL.tealLight:PAL.grayLight,cursor:"pointer",border:`1px solid ${equipoCheck[i]?PAL.teal+"55":PAL.border}`}}><input type="checkbox" checked={equipoCheck[i]} onChange={()=>setEquipoCheck(prev=>prev.map((v,j)=>j===i?!v:v))} style={{accentColor:PAL.teal}}/><Avatar nombre={e.nombre} size={24}/><span style={{fontSize:13,flex:1}}>{e.nombre}</span><span style={{fontSize:11,color:PAL.gray,background:PAL.surface,padding:"1px 8px",borderRadius:10}}>{e.rol}</span></label>))}
+          {equipoArr.map((e,i)=>(<label key={e.id||i} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 10px",borderRadius:7,background:equipoCheck[i]?PAL.tealLight:PAL.grayLight,cursor:"pointer",border:`1px solid ${equipoCheck[i]?PAL.teal+"55":PAL.border}`}}><input type="checkbox" checked={equipoCheck[i]||false} onChange={()=>setEquipoCheck(prev=>prev.map((v,j)=>j===i?!v:v))} style={{accentColor:PAL.teal}}/><Avatar nombre={e.nombre} size={24}/><span style={{fontSize:13,flex:1}}>{e.nombre}</span><span style={{fontSize:11,color:PAL.gray,background:PAL.surface,padding:"1px 8px",borderRadius:10}}>{e.rol}</span></label>))}
         </div>
       </Field>
       <Field label="Color del proyecto">
@@ -778,7 +779,8 @@ function TarjetaProyecto({proyecto,onClick,onDuplicate,onDelete,esAdmin,modo="li
 
 // ─── RESPONSABLES MODAL ────────────────────────────────────────────────────────
 function ResponsablesModal({equipo,onSave,onClose}){
-  const [lista,setLista]=useState(equipo.map(e=>({...e})));
+  const equipoArr=Array.isArray(equipo)?equipo:[];
+  const [lista,setLista]=useState(equipoArr.map(e=>({...e})));
   const [nuevo,setNuevo]=useState({nombre:"",rol:""});
   const add=()=>{if(!nuevo.nombre||!nuevo.rol)return;setLista(l=>[...l,{...nuevo,id:uid()}]);setNuevo({nombre:"",rol:""});};
   return(<Overlay><div style={{background:PAL.surface,borderRadius:16,padding:24,width:"92%",maxWidth:480,maxHeight:"85vh",overflowY:"auto"}}>
@@ -984,6 +986,30 @@ function MaquiladoresModal({maquiladores,onSave,onClose}){
   </div></Overlay>);
 }
 
+// ─── MODAL RIESGO ─────────────────────────────────────────────────────────────
+const NIVELES_RIESGO_LIST=["Alto","Medio","Bajo"];
+const ESTADO_RIESGO_LIST=["Activo","Mitigado","Cerrado"];
+function RiesgoModal({riesgo,onSave,onClose}){
+  const [form,setForm]=useState(riesgo?.id?{...riesgo}:{descripcion:"",nivel:"Alto",impacto:"",mitigacion:"",estado:"Activo"});
+  const set=(k,v)=>setForm(f=>({...f,[k]:v}));
+  return(<Overlay><div style={{background:PAL.surface,borderRadius:16,padding:24,width:"92%",maxWidth:460}}>
+    <div style={{fontSize:15,fontWeight:700,color:PAL.text,marginBottom:16}}>{riesgo?.id?"Editar riesgo":"Nuevo riesgo"}</div>
+    <div style={{display:"flex",flexDirection:"column",gap:12}}>
+      <Field label="Descripción del riesgo *"><Inp value={form.descripcion} onChange={e=>set("descripcion",e.target.value)} placeholder="Ej. Retraso en registro COFEPRIS"/></Field>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+        <Field label="Nivel"><Sel value={form.nivel} onChange={e=>set("nivel",e.target.value)}>{NIVELES_RIESGO_LIST.map(n=><option key={n}>{n}</option>)}</Sel></Field>
+        <Field label="Estado"><Sel value={form.estado} onChange={e=>set("estado",e.target.value)}>{ESTADO_RIESGO_LIST.map(s=><option key={s}>{s}</option>)}</Sel></Field>
+      </div>
+      <Field label="Impacto potencial"><Inp value={form.impacto} onChange={e=>set("impacto",e.target.value)} placeholder="Ej. Retraso de 3 meses en lanzamiento"/></Field>
+      <Field label="Plan de mitigación"><Inp value={form.mitigacion} onChange={e=>set("mitigacion",e.target.value)} placeholder="Ej. Iniciar trámite con 2 meses de anticipación"/></Field>
+      <div style={{display:"flex",gap:10,marginTop:6}}>
+        <Btn v="secondary" style={{flex:1}} onClick={onClose}>Cancelar</Btn>
+        <Btn style={{flex:1}} onClick={()=>{if(form.descripcion){onSave(form);}}}>Guardar</Btn>
+      </div>
+    </div>
+  </div></Overlay>);
+}
+
 // ─── VISTA PROYECTO ───────────────────────────────────────────────────────────
 const TABS_PROY=["Proceso","Gantt","Calendario","Tareas","Equipo","Minutas","Archivos"];
 
@@ -997,15 +1023,11 @@ function VistaProyecto({proyecto,equipoGlobal,onUpdate,onBack,esAdmin}){
   const [editProyecto,setEditProyecto]=useState(false);
   const [configEtapas,setConfigEtapas]=useState(false);
   const [filterTarea,setFilterTarea]=useState("Todas");
-  const [modalRiesgo,setModalRiesgo]=useState(null); // null | {} | riesgo
+  const [modalRiesgo,setModalRiesgo]=useState(null);
   const today=new Date();
 
-  const NIVELES_RIESGO=["Alto","Medio","Bajo"];
-  const ESTADO_RIESGO=["Activo","Mitigado","Cerrado"];
   const saveRiesgo=(form)=>{
-    let riesgos;
-    if(modalRiesgo?.id) riesgos=(proyecto.riesgos||[]).map(r=>r.id===modalRiesgo.id?{...r,...form}:r);
-    else riesgos=[...(proyecto.riesgos||[]),{...form,id:uid()}];
+    const riesgos=modalRiesgo?.id?(proyecto.riesgos||[]).map(r=>r.id===modalRiesgo.id?{...r,...form}:r):[...(proyecto.riesgos||[]),{...form,id:uid()}];
     onUpdate({...proyecto,riesgos});
     setModalRiesgo(null);
   };
@@ -1157,7 +1179,7 @@ function VistaProyecto({proyecto,equipoGlobal,onUpdate,onBack,esAdmin}){
       {tab==="Equipo"&&(
         <div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:12}}>
-            {proyecto.equipo.map((persona,i)=>(<div key={i} style={{background:PAL.surface,border:`1px solid ${PAL.border}`,borderRadius:12,padding:16,display:"flex",gap:12,alignItems:"center"}}><Avatar nombre={persona.nombre} size={40}/><div><div style={{fontSize:14,fontWeight:600,color:PAL.text}}>{persona.nombre.split(" ")[0]}</div><div style={{fontSize:11,color:PAL.gray}}>{persona.nombre.split(" ").slice(1).join(" ")}</div><div style={{marginTop:4}}><Pill label={persona.rol} color={PAL.teal}/></div></div></div>))}
+            {(Array.isArray(proyecto.equipo)?proyecto.equipo:[]).map((persona,i)=>(<div key={i} style={{background:PAL.surface,border:`1px solid ${PAL.border}`,borderRadius:12,padding:16,display:"flex",gap:12,alignItems:"center"}}><Avatar nombre={persona.nombre} size={40}/><div><div style={{fontSize:14,fontWeight:600,color:PAL.text}}>{persona.nombre.split(" ")[0]}</div><div style={{fontSize:11,color:PAL.gray}}>{persona.nombre.split(" ").slice(1).join(" ")}</div><div style={{marginTop:4}}><Pill label={persona.rol} color={PAL.teal}/></div></div></div>))}
           </div>
           <div style={{marginTop:16,background:PAL.grayLight,borderRadius:10,padding:14}}><div style={{fontSize:13,fontWeight:600,color:PAL.text,marginBottom:6}}>Maquilador</div><div style={{fontSize:13,color:PAL.gray}}>🏭 <b style={{color:PAL.text}}>{proyecto.maquilador}</b> · {proyecto.pais}</div></div>
         </div>
@@ -1182,41 +1204,12 @@ function VistaProyecto({proyecto,equipoGlobal,onUpdate,onBack,esAdmin}){
       {tab==="Archivos"&&<ArchivosTab proyecto={proyecto}/>}
 
       {modalEtapa&&<EtapaModal etapa={modalEtapa.etapa} idx={modalEtapa.idx} proyecto={proyecto} onSave={saveEtapa} onClose={()=>setModalEtapa(null)}/>}
-      {modalTarea!==null&&<TareaModal tarea={modalTarea?.id?modalTarea:null} equipo={proyecto.equipo} onSave={saveTarea} onClose={()=>setModalTarea(null)}/>}
+      {modalTarea!==null&&<TareaModal tarea={modalTarea?.id?modalTarea:null} equipo={Array.isArray(proyecto.equipo)?proyecto.equipo:[]} onSave={saveTarea} onClose={()=>setModalTarea(null)}/>}
       {modalMinuta&&<MinutaModal proyecto={proyecto} onSave={saveMinuta} onClose={()=>setModalMinuta(false)}/>}
       {modalTeams&&<TeamsModal tareas={modalTeams} onClose={()=>setModalTeams(null)}/>}
-      {editProyecto&&<ProyectoModal proyecto={proyecto} equipoGlobal={equipoGlobal} onSave={p=>{onUpdate({...proyecto,...p});setEditProyecto(false);}} onClose={()=>setEditProyecto(false)}/>}
+      {editProyecto&&<ProyectoModal proyecto={proyecto} equipoGlobal={Array.isArray(equipoGlobal)?equipoGlobal:EQUIPO_INICIAL} onSave={p=>{onUpdate({...proyecto,...p});setEditProyecto(false);}} onClose={()=>setEditProyecto(false)}/>}
       {configEtapas&&<EtapasConfigModal etapas={proyecto.etapas} onSave={etapas=>onUpdate({...proyecto,etapas:etapas.map(e=>({...e,entregables:e.entregables||[]}))})} onClose={()=>setConfigEtapas(false)}/>}
-      {modalRiesgo!==null&&(
-        <Overlay><div style={{background:PAL.surface,borderRadius:16,padding:24,width:"92%",maxWidth:460}}>
-          <div style={{fontSize:15,fontWeight:700,color:PAL.text,marginBottom:16}}>{modalRiesgo?.id?"Editar riesgo":"Nuevo riesgo"}</div>
-          {(()=>{
-            const [form,setForm]=React.useState(modalRiesgo?.id?{...modalRiesgo}:{descripcion:"",nivel:"Alto",impacto:"",mitigacion:"",estado:"Activo"});
-            const set=(k,v)=>setForm(f=>({...f,[k]:v}));
-            return(<div style={{display:"flex",flexDirection:"column",gap:12}}>
-              <Field label="Descripción del riesgo *"><Inp value={form.descripcion} onChange={e=>set("descripcion",e.target.value)} placeholder="Ej. Retraso en registro COFEPRIS"/></Field>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-                <Field label="Nivel">
-                  <Sel value={form.nivel} onChange={e=>set("nivel",e.target.value)}>
-                    {NIVELES_RIESGO.map(n=><option key={n}>{n}</option>)}
-                  </Sel>
-                </Field>
-                <Field label="Estado">
-                  <Sel value={form.estado} onChange={e=>set("estado",e.target.value)}>
-                    {ESTADO_RIESGO.map(s=><option key={s}>{s}</option>)}
-                  </Sel>
-                </Field>
-              </div>
-              <Field label="Impacto potencial"><Inp value={form.impacto} onChange={e=>set("impacto",e.target.value)} placeholder="Ej. Retraso de 3 meses en lanzamiento"/></Field>
-              <Field label="Plan de mitigación"><Inp value={form.mitigacion} onChange={e=>set("mitigacion",e.target.value)} placeholder="Ej. Iniciar trámite con 2 meses de anticipación"/></Field>
-              <div style={{display:"flex",gap:10,marginTop:6}}>
-                <Btn v="secondary" style={{flex:1}} onClick={()=>setModalRiesgo(null)}>Cancelar</Btn>
-                <Btn style={{flex:1}} onClick={()=>{if(form.descripcion)saveRiesgo(form);}}>Guardar</Btn>
-              </div>
-            </div>);
-          })()}
-        </div></Overlay>
-      )}
+      {modalRiesgo!==null&&<RiesgoModal riesgo={modalRiesgo} onSave={saveRiesgo} onClose={()=>setModalRiesgo(null)}/>}
       {confirmDel&&(<Overlay><div style={{background:PAL.surface,borderRadius:14,padding:24,width:300,textAlign:"center"}}><div style={{fontSize:15,fontWeight:700,marginBottom:8}}>¿Eliminar tarea?</div><div style={{fontSize:13,color:PAL.gray,marginBottom:20}}>Esta acción no se puede deshacer.</div><div style={{display:"flex",gap:10}}><Btn v="secondary" style={{flex:1}} onClick={()=>setConfirmDel(null)}>Cancelar</Btn><Btn v="danger" style={{flex:1}} onClick={()=>delTarea(confirmDel)}>Eliminar</Btn></div></div></Overlay>)}
     </div>
   );
@@ -1268,7 +1261,20 @@ function App(){
         setProyectos(PROYECTOS_EJEMPLO);
       }
       const {data:eq}=await sb.from("equipo_global").select("*").limit(1);
-      if(eq&&eq.length>0) setEquipoGlobal(eq[0].data);
+      if(eq&&eq.length>0){
+        const d=eq[0].data;
+        // d puede ser el array del equipo directamente, o un objeto con claves
+        if(Array.isArray(d)) setEquipoGlobal(d);
+        else {
+          // extraer equipo, maquiladores y tipos si existen
+          if(d.maquiladores&&Array.isArray(d.maquiladores)){MAQUILADORES=d.maquiladores;setMaquiladoresList(d.maquiladores);}
+          if(d.tiposProyecto&&Array.isArray(d.tiposProyecto)){TIPOS_PROYECTO=d.tiposProyecto;setTiposList(d.tiposProyecto);}
+          // el equipo puede estar en d directamente como array de objetos con nombre/rol
+          // o puede ser que d tenga una clave equipo
+          if(d.equipo&&Array.isArray(d.equipo)) setEquipoGlobal(d.equipo);
+          // si no hay equipo en el objeto, dejar el inicial
+        }
+      }
       setLoading(false);
     };
     cargar();
@@ -1320,9 +1326,11 @@ function App(){
   };
   const saveEquipo=async(equipo)=>{
     setEquipoGlobal(equipo);
-    const {data:eq}=await sb.from("equipo_global").select("id").limit(1);
-    if(eq&&eq.length>0) await sb.from("equipo_global").update({data:equipo,updated_at:new Date()}).eq("id",eq[0].id);
-    else await sb.from("equipo_global").insert({data:equipo});
+    const {data:eq}=await sb.from("equipo_global").select("id,data").limit(1);
+    const prev=eq&&eq.length>0?eq[0].data:{};
+    const newData=Array.isArray(prev)?{equipo,maquiladores:MAQUILADORES,tiposProyecto:TIPOS_PROYECTO}:{...prev,equipo};
+    if(eq&&eq.length>0) await sb.from("equipo_global").update({data:newData}).eq("id",eq[0].id);
+    else await sb.from("equipo_global").insert({data:newData});
   };
   const logout=async()=>{await sb.auth.signOut();setSession(null);setPerfil(null);setProyectos([]);};
 
@@ -1473,8 +1481,8 @@ function App(){
         </div>
       )}
 
-      {modalNuevo&&<ProyectoModal equipoGlobal={equipoGlobal} maquiladoresProp={maquiladoresList} onSave={p=>{crearProyecto(p);setModalNuevo(false);}} onClose={()=>setModalNuevo(false)}/>}
-      {modalResponsables&&<ResponsablesModal equipo={equipoGlobal} onSave={saveEquipo} onClose={()=>setModalResponsables(false)}/>}
+      {modalNuevo&&<ProyectoModal equipoGlobal={Array.isArray(equipoGlobal)?equipoGlobal:EQUIPO_INICIAL} maquiladoresProp={maquiladoresList} onSave={p=>{crearProyecto(p);setModalNuevo(false);}} onClose={()=>setModalNuevo(false)}/>}
+      {modalResponsables&&<ResponsablesModal equipo={Array.isArray(equipoGlobal)?equipoGlobal:EQUIPO_INICIAL} onSave={saveEquipo} onClose={()=>setModalResponsables(false)}/>}
       {modalUsuarios&&<UsuariosModal onClose={()=>setModalUsuarios(false)}/>}
       {modalMaquiladores&&<MaquiladoresModal maquiladores={maquiladoresList} onSave={saveMaquiladores} onClose={()=>setModalMaquiladores(false)}/>}
       {modalTipos&&<TiposProyectoModal tipos={tiposList} onSave={saveTipos} onClose={()=>setModalTipos(false)}/>}
