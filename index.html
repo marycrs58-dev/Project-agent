@@ -1346,37 +1346,62 @@ function App(){
     return 0;
   });
 
-  const stats={total:proyectos.length,enProceso:proyectos.filter(p=>progreso(p)>0&&progreso(p)<100).length,vencidos:proyectos.reduce((a,p)=>a+p.tareas.filter(t=>t.status!=="Completado"&&t.fechaLimite&&new Date(t.fechaLimite)<new Date()).length,0),avg:proyectos.length?Math.round(proyectos.reduce((a,p)=>a+progreso(p),0)/proyectos.length):0};
+  const stats={
+    total:filtrados.length,
+    enProceso:filtrados.filter(p=>progreso(p)>0&&progreso(p)<100).length,
+    vencidos:filtrados.reduce((a,p)=>a+p.tareas.filter(t=>t.status!=="Completado"&&t.fechaLimite&&new Date(t.fechaLimite)<new Date()).length,0),
+    avg:filtrados.length?Math.round(filtrados.reduce((a,p)=>a+progreso(p),0)/filtrados.length):0,
+    hayFiltro: busqueda||filtroMaq!=="Todos"||filtrocat!=="Todos"||filtroTipo!=="Todos"||filtroDueno!=="Todos"
+  };
 
   return(
-    <div style={{fontFamily:"'DM Sans','Segoe UI',system-ui,sans-serif",maxWidth:880,margin:"0 auto",padding:"0 16px 40px",minHeight:"100vh"}}>
+    <div style={{fontFamily:"'DM Sans','Segoe UI',system-ui,sans-serif",minHeight:"100vh",background:"#EEECEA"}}>
       {saving&&<div style={{position:"fixed",top:12,right:16,background:PAL.teal,color:"#fff",borderRadius:8,padding:"5px 14px",fontSize:12,zIndex:99}}>Guardando…</div>}
-      <div style={{paddingTop:20,marginBottom:20}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:10}}>
-          <div>
-            <div style={{fontSize:11,letterSpacing:"0.12em",textTransform:"uppercase",color:PAL.teal,fontWeight:700,marginBottom:4}}>Gestión de proyectos</div>
-            <div style={{fontSize:26,fontWeight:900,color:PAL.text,letterSpacing:-1}}>Marycarmen Reséndiz</div>
-            <div style={{fontSize:14,color:PAL.gray,marginTop:2}}>OTC · Cosméticos · Manufactura</div>
-          </div>
-          <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
-            <div style={{display:"flex",alignItems:"center",gap:8,padding:"6px 12px",background:PAL.grayLight,borderRadius:20,fontSize:13}}>
-              <Avatar nombre={perfil?.nombre||perfil?.email||"?"} size={22}/>
-              <span style={{color:PAL.text,fontWeight:500}}>{perfil?.nombre||perfil?.email}</span>
-              <Badge label={perfil?.rol||"viewer"}/>
+
+      {/* Banner superior */}
+      <div style={{background:`linear-gradient(135deg, #0D2B2C 0%, #0D7377 60%, #1E7E4E 100%)`,padding:"28px 24px 24px",marginBottom:0}}>
+        <div style={{maxWidth:880,margin:"0 auto"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:12}}>
+            <div>
+              <div style={{fontSize:11,letterSpacing:"0.14em",textTransform:"uppercase",color:"rgba(255,255,255,0.7)",fontWeight:600,marginBottom:5}}>Gestión de proyectos</div>
+              <div style={{fontSize:28,fontWeight:900,color:"#fff",letterSpacing:-0.5}}>Marycarmen Reséndiz</div>
+              <div style={{fontSize:14,color:"rgba(255,255,255,0.75)",marginTop:3}}>OTC · Cosméticos · Manufactura</div>
             </div>
-            {esAdmin&&<Btn v="ghost" onClick={()=>setModalResponsables(true)}>👥 Equipo</Btn>}
-            {esAdmin&&<Btn v="ghost" onClick={()=>setModalMaquiladores(true)}>🏭 Maquiladores</Btn>}
-            {esAdmin&&<Btn v="ghost" onClick={()=>setModalTipos(true)}>🏷️ Tipos</Btn>}
-            {esAdmin&&<Btn v="purple" onClick={()=>setModalUsuarios(true)}>🔐 Usuarios</Btn>}
-            {esAdmin&&<Btn onClick={()=>setModalNuevo(true)}>+ Nuevo proyecto</Btn>}
-            <Btn v="secondary" onClick={logout} style={{fontSize:12}}>Cerrar sesión</Btn>
+            <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,padding:"6px 12px",background:"rgba(255,255,255,0.15)",borderRadius:20,fontSize:13,backdropFilter:"blur(4px)"}}>
+                <Avatar nombre={perfil?.nombre||perfil?.email||"?"} size={22}/>
+                <span style={{color:"#fff",fontWeight:500}}>{perfil?.nombre||perfil?.email}</span>
+                <Badge label={perfil?.rol||"viewer"}/>
+              </div>
+              {esAdmin&&<button onClick={()=>setModalResponsables(true)} style={{padding:"6px 12px",borderRadius:8,border:"1px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.1)",color:"#fff",cursor:"pointer",fontSize:12,fontWeight:500}}>👥 Equipo</button>}
+              {esAdmin&&<button onClick={()=>setModalMaquiladores(true)} style={{padding:"6px 12px",borderRadius:8,border:"1px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.1)",color:"#fff",cursor:"pointer",fontSize:12,fontWeight:500}}>🏭 Maquiladores</button>}
+              {esAdmin&&<button onClick={()=>setModalTipos(true)} style={{padding:"6px 12px",borderRadius:8,border:"1px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.1)",color:"#fff",cursor:"pointer",fontSize:12,fontWeight:500}}>🏷️ Tipos</button>}
+              {esAdmin&&<button onClick={()=>setModalUsuarios(true)} style={{padding:"6px 12px",borderRadius:8,border:"1px solid rgba(255,255,255,0.3)",background:"rgba(255,255,255,0.15)",color:"#fff",cursor:"pointer",fontSize:12,fontWeight:500}}>🔐 Usuarios</button>}
+              {esAdmin&&<button onClick={()=>setModalNuevo(true)} style={{padding:"7px 16px",borderRadius:8,border:"none",background:"#fff",color:PAL.teal,cursor:"pointer",fontSize:13,fontWeight:700}}>+ Nuevo proyecto</button>}
+              <button onClick={logout} style={{padding:"6px 12px",borderRadius:8,border:"1px solid rgba(255,255,255,0.3)",background:"transparent",color:"rgba(255,255,255,0.8)",cursor:"pointer",fontSize:12}}>Cerrar sesión</button>
+            </div>
+          </div>
+
+          {/* Métricas dentro del banner */}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginTop:22}}>
+            {[
+              {label:stats.hayFiltro?"Filtrados":"Proyectos totales",value:stats.total,sub:stats.hayFiltro?`de ${proyectos.length} totales`:null,color:"#fff",bg:"rgba(255,255,255,0.12)"},
+              {label:"En proceso",value:stats.enProceso,color:"#7EEAEA",bg:"rgba(255,255,255,0.1)"},
+              {label:"Tareas vencidas",value:stats.vencidos,color:stats.vencidos>0?"#FFB3B3":"#A8EDBA",bg:"rgba(255,255,255,0.1)"},
+              {label:"Avance promedio",value:`${stats.avg}%`,color:"#FFD97A",bg:"rgba(255,255,255,0.1)"},
+            ].map(m=>(
+              <div key={m.label} style={{background:m.bg,borderRadius:10,padding:"12px 14px",border:"1px solid rgba(255,255,255,0.15)"}}>
+                <div style={{fontSize:11,color:"rgba(255,255,255,0.65)",marginBottom:3,textTransform:"uppercase",letterSpacing:"0.04em"}}>{m.label}</div>
+                <div style={{fontSize:22,fontWeight:800,color:m.color}}>{m.value}</div>
+                {m.sub&&<div style={{fontSize:10,color:"rgba(255,255,255,0.5)",marginTop:2}}>{m.sub}</div>}
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:20}}>
-        {[{label:"Proyectos totales",value:stats.total,color:PAL.text},{label:"En proceso",value:stats.enProceso,color:PAL.teal},{label:"Tareas vencidas",value:stats.vencidos,color:stats.vencidos>0?PAL.red:PAL.green},{label:"Avance promedio",value:`${stats.avg}%`,color:PAL.amber}].map(m=>(<div key={m.label} style={{background:PAL.surface,borderRadius:12,padding:"14px 16px",border:`1px solid ${PAL.border}`}}><div style={{fontSize:11,color:PAL.gray,marginBottom:4,textTransform:"uppercase",letterSpacing:"0.04em"}}>{m.label}</div><div style={{fontSize:24,fontWeight:800,color:m.color}}>{m.value}</div></div>))}
-      </div>
+      {/* Contenido principal */}
+      <div style={{maxWidth:880,margin:"0 auto",padding:"20px 16px 40px"}}>
 
       <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}>
         <input placeholder="Buscar producto, cliente o maquilador…" value={busqueda} onChange={e=>setBusqueda(e.target.value)} style={{flex:1,minWidth:180,padding:"9px 13px",borderRadius:9,border:`1px solid ${PAL.border}`,fontSize:13,outline:"none",background:PAL.surface,fontFamily:"inherit"}}/>
@@ -1447,6 +1472,7 @@ function App(){
           <Btn v="danger" style={{flex:1}} onClick={()=>eliminarProyecto(confirmDelProy)}>Eliminar</Btn>
         </div>
       </div></Overlay>)}
+      </div>{/* fin contenido principal */}
     </div>
   );
 }
