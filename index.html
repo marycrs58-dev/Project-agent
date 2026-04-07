@@ -4,14 +4,15 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Gestión de Proyectos · OTC & Cosméticos</title>
-<!-- Preload critical scripts -->
-<link rel="preload" href="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js" as="script" crossorigin/>
-<link rel="preload" href="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js" as="script" crossorigin/>
-<link rel="preload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.js" as="script" crossorigin/>
+<!-- DNS prefetch -->
+<meta http-equiv="Cache-Control" content="public, max-age=31536000"/>
+<link rel="dns-prefetch" href="https://cdn.jsdelivr.net"/>
+<link rel="dns-prefetch" href="https://nnunpupacqjnpxgqplod.supabase.co"/>
+<!-- Scripts en orden de prioridad -->
 <script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js" crossorigin></script>
 <script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin></script>
-<script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.25.6/babel.min.js" crossorigin></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.js" crossorigin></script>
+<script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.25.6/babel.min.js" crossorigin></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -32,8 +33,24 @@ body{font-family:'DM Sans','Segoe UI',system-ui,sans-serif;background:#F7F6F2;mi
 <div id="loading-screen">
   <div class="ld-logo">💊</div>
   <div class="ld-spinner"></div>
-  <div class="ld-text">Cargando Genomma Lab…</div>
+  <div class="ld-text" id="ld-msg">Iniciando…</div>
+  <div style="width:200px;height:3px;background:#E8E4DC;border-radius:99px;overflow:hidden;margin-top:8px">
+    <div id="ld-bar" style="height:100%;background:#0D7377;border-radius:99px;width:0%;transition:width 0.4s ease"></div>
+  </div>
 </div>
+<script>
+  // Update loading progress messages
+  const msgs = ["Cargando componentes…","Conectando a base de datos…","Preparando interfaz…"];
+  const bar = document.getElementById("ld-bar");
+  const msg = document.getElementById("ld-msg");
+  let step = 0;
+  const iv = setInterval(()=>{
+    step++;
+    if(bar) bar.style.width = Math.min(90, step*25)+"%";
+    if(msg && msgs[step-1]) msg.textContent = msgs[step-1];
+    if(step >= msgs.length) clearInterval(iv);
+  }, 600);
+</script>
 <script type="text/babel" data-presets="react" data-plugins="">
 
 const { useState, useEffect, useRef } = React;
@@ -616,16 +633,16 @@ function GanttTab({proyecto}){
       </div>
 
       {/* ── Gantt ── */}
-      <div style={{border:`1px solid ${PAL.border}`,borderRadius:12,background:PAL.surface}}>
-        {/* Header sticky */}
-        <div style={{display:"flex",borderBottom:`2px solid ${PAL.border}`,background:"#F8F9FF",position:"sticky",top:0,zIndex:10}}>
-          <div style={{width:COL_W,flexShrink:0,padding:"7px 12px",fontSize:11,fontWeight:700,color:PAL.gray,borderRight:`1px solid ${PAL.border}`,textTransform:"uppercase",letterSpacing:"0.05em",background:"#F8F9FF"}}>
+      <div style={{border:`1px solid ${PAL.border}`,borderRadius:12,background:PAL.surface,maxHeight:520,overflowY:"auto",overflowX:"hidden"}}>
+        {/* Header sticky dentro del scroll */}
+        <div style={{display:"flex",borderBottom:`2px solid ${PAL.border}`,background:"#F8F9FF",position:"sticky",top:0,zIndex:10,boxShadow:"0 2px 4px rgba(0,0,0,0.06)"}}>
+          <div style={{width:COL_W,flexShrink:0,padding:"8px 12px",fontSize:11,fontWeight:700,color:PAL.gray,borderRight:`1px solid ${PAL.border}`,textTransform:"uppercase",letterSpacing:"0.05em",background:"#F8F9FF"}}>
             Etapa
           </div>
           <div ref={headerRef} style={{flex:1,overflow:"hidden",pointerEvents:"none",background:"#F8F9FF"}}>
             <div style={{display:"flex",width:chartW,minWidth:"100%"}}>
               {columnas.map((col,i)=>(
-                <div key={i} style={{flex:`0 0 ${col.width}%`,fontSize:escala==="semanas"?9:10,color:PAL.gray,borderLeft:`1px dashed ${PAL.border}`,paddingLeft:5,paddingTop:7,paddingBottom:7,overflow:"hidden",whiteSpace:"nowrap",fontWeight:600}}>
+                <div key={i} style={{flex:`0 0 ${col.width}%`,fontSize:escala==="semanas"?9:10,color:PAL.gray,borderLeft:`1px dashed ${PAL.border}`,paddingLeft:5,paddingTop:8,paddingBottom:8,overflow:"hidden",whiteSpace:"nowrap",fontWeight:600}}>
                   {col.label}
                 </div>
               ))}
@@ -2057,11 +2074,14 @@ function App(){
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<App/>);
-// Hide loading screen after first render
 requestAnimationFrame(()=>{
   requestAnimationFrame(()=>{
-    const ls=document.getElementById('loading-screen');
-    if(ls){ls.classList.add('hidden');setTimeout(()=>ls.remove(),500);}
+    const bar=document.getElementById('ld-bar');
+    if(bar){bar.style.width='100%';}
+    setTimeout(()=>{
+      const ls=document.getElementById('loading-screen');
+      if(ls){ls.classList.add('hidden');setTimeout(()=>ls.remove(),400);}
+    },300);
   });
 });
 </script>
