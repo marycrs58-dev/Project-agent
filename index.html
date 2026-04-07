@@ -616,13 +616,13 @@ function GanttTab({proyecto}){
       </div>
 
       {/* ── Gantt ── */}
-      <div style={{border:`1px solid ${PAL.border}`,borderRadius:12,overflow:"hidden",background:PAL.surface}}>
-        {/* Header */}
-        <div style={{display:"flex",borderBottom:`2px solid ${PAL.border}`,background:"#F8F9FF"}}>
-          <div style={{width:COL_W,flexShrink:0,padding:"7px 12px",fontSize:11,fontWeight:700,color:PAL.gray,borderRight:`1px solid ${PAL.border}`,textTransform:"uppercase",letterSpacing:"0.05em"}}>
+      <div style={{border:`1px solid ${PAL.border}`,borderRadius:12,background:PAL.surface}}>
+        {/* Header sticky */}
+        <div style={{display:"flex",borderBottom:`2px solid ${PAL.border}`,background:"#F8F9FF",position:"sticky",top:0,zIndex:10}}>
+          <div style={{width:COL_W,flexShrink:0,padding:"7px 12px",fontSize:11,fontWeight:700,color:PAL.gray,borderRight:`1px solid ${PAL.border}`,textTransform:"uppercase",letterSpacing:"0.05em",background:"#F8F9FF"}}>
             Etapa
           </div>
-          <div ref={headerRef} style={{flex:1,overflow:"hidden",pointerEvents:"none"}}>
+          <div ref={headerRef} style={{flex:1,overflow:"hidden",pointerEvents:"none",background:"#F8F9FF"}}>
             <div style={{display:"flex",width:chartW,minWidth:"100%"}}>
               {columnas.map((col,i)=>(
                 <div key={i} style={{flex:`0 0 ${col.width}%`,fontSize:escala==="semanas"?9:10,color:PAL.gray,borderLeft:`1px dashed ${PAL.border}`,paddingLeft:5,paddingTop:7,paddingBottom:7,overflow:"hidden",whiteSpace:"nowrap",fontWeight:600}}>
@@ -1513,7 +1513,19 @@ function VistaProyecto({proyecto,equipoGlobal,onUpdate,onBack,esAdmin}){
 
       {tab==="Proceso"&&(
         <div>
-          <div style={{fontSize:12,color:PAL.gray,marginBottom:12}}>{esAdmin?"Haz clic en una etapa para actualizar estado, fechas, responsable y entregables.":"Vista de solo lectura."}</div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12,flexWrap:"wrap",gap:8}}>
+            <span style={{fontSize:12,color:PAL.gray}}>{esAdmin?"Haz clic en una etapa para actualizar estado, fechas, responsable y entregables.":"Vista de solo lectura."}</span>
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={()=>exportarProcesoExcel(proyecto)}
+                style={{display:"flex",alignItems:"center",gap:6,padding:"6px 14px",borderRadius:8,border:`1px solid ${PAL.border}`,background:"#F0FDF4",color:"#166534",cursor:"pointer",fontSize:12,fontWeight:600}}>
+                📊 Exportar Excel
+              </button>
+              <button onClick={()=>exportarProcesoPDF(proyecto)}
+                style={{display:"flex",alignItems:"center",gap:6,padding:"6px 14px",borderRadius:8,border:`1px solid ${PAL.border}`,background:"#FEF2F2",color:"#991B1B",cursor:"pointer",fontSize:12,fontWeight:600}}>
+                📄 Exportar PDF
+              </button>
+            </div>
+          </div>
           <div style={{display:"flex",flexDirection:"column",gap:7}}>
             {proyecto.etapas.map((etapa,i)=>{
               const done=etapa.status==="Completado";const isActual=etapa.status==="En progreso";const isRetrasado=etapa.status==="Retrasado";const entsDone=etapa.entregables.filter(e=>e.done).length;
@@ -1608,6 +1620,155 @@ function VistaProyecto({proyecto,equipoGlobal,onUpdate,onBack,esAdmin}){
     </div>
   );
 }
+
+// ─── EXPORTAR PROCESO ────────────────────────────────────────────────────────
+
+// Exportar a Excel (CSV enriquecido)
+const exportarProcesoExcel = (proyecto) => {
+  const pct = progreso(proyecto);
+  const rows = [
+    [`PROCESO DE DESARROLLO — ${proyecto.nombre}`],
+    [`Cliente: ${proyecto.cliente}`, `Maquilador: ${proyecto.maquilador}`, `País: ${proyecto.pais}`],
+    [`Avance total: ${pct}%`, `Fecha inicio: ${proyecto.fechaInicio}`, `Fecha lanzamiento: ${proyecto.fechaLanzamiento}`],
+    [],
+    ["#","Etapa","Estado","Responsable","Fecha Inicio","Fecha Compromiso",
+     "Entregables completados","Entregables totales","% Entregables","Notas"],
+    ...proyecto.etapas.map((e,i)=>[
+      i+1,
+      `"${e.label}"`,
+      e.status,
+      `"${e.responsable||""}"`,
+      e.fechaInicio||"",
+      e.fechaFin||"",
+      e.entregables.filter(x=>x.done).length,
+      e.entregables.length,
+      e.entregables.length>0?`${Math.round(e.entregables.filter(x=>x.done).length/e.entregables.length*100)}%`:"0%",
+      `"${e.notas||""}"`
+    ]),
+    [],
+    ["ENTREGABLES POR ETAPA"],
+    ["Etapa","Entregable","Completado"],
+    ...proyecto.etapas.flatMap(e=>
+      e.entregables.map(ent=>[`"${e.label}"`,`"${ent.desc}"`,ent.done?"Sí":"No"])
+    ),
+    [],
+    ["TAREAS"],
+    ["Tarea","Responsable","Fecha límite","Status","Prioridad"],
+    ...proyecto.tareas.map(t=>[`"${t.nombre}"`,`"${t.responsable||""}"`,t.fechaLimite||"",t.status,t.prioridad||""])
+  ];
+  const csv = rows.map(r=>Array.isArray(r)?r.join(","):"").join("\n");
+  const blob = new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href=url; a.download=`Proceso_${proyecto.nombre.replace(/\s/g,"_")}.csv`; a.click();
+  URL.revokeObjectURL(url);
+};
+
+// Exportar a PDF (genera HTML y abre ventana de impresión)
+const exportarProcesoPDF = (proyecto) => {
+  const pct = progreso(proyecto);
+  const statusColor = {Completado:"#1E7E4E","En progreso":"#1D4ED8",Pendiente:"#C8841A",Bloqueado:"#C0392B",Retrasado:"#C0392B"};
+  const statusBg = {Completado:"#E8F8EF","En progreso":"#DBEAFE",Pendiente:"#FDF3E3",Bloqueado:"#FDEDEC",Retrasado:"#FDEDEC"};
+
+  const etapasHTML = proyecto.etapas.map((e,i)=>{
+    const col = statusColor[e.status]||"#7A7A7A";
+    const bg = statusBg[e.status]||"#F0EEE9";
+    const entsDone = e.entregables.filter(x=>x.done).length;
+    const entsTotal = e.entregables.length;
+    const entsPct = entsTotal>0?Math.round(entsDone/entsTotal*100):0;
+    const entregablesHTML = e.entregables.length>0?`
+      <div style="margin-top:6px;padding-left:8px;border-left:2px solid ${col}44">
+        ${e.entregables.map(ent=>`
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;font-size:11px;color:${ent.done?"#1E7E4E":"#7A7A7A"}">
+            <span style="font-size:10px">${ent.done?"✓":"○"}</span>
+            <span style="${ent.done?"text-decoration:line-through":""}">${ent.desc}</span>
+          </div>`).join("")}
+      </div>`:""
+    return `
+      <div style="display:flex;gap:12px;padding:10px 12px;background:${bg};border-radius:8px;border:1px solid ${col}33;margin-bottom:6px;break-inside:avoid">
+        <div style="font-size:20px;flex-shrink:0;padding-top:2px">${e.icon}</div>
+        <div style="flex:1">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div style="font-size:13px;font-weight:700;color:${col}">${e.label}</div>
+            <span style="font-size:10px;background:${col}22;color:${col};border-radius:4px;padding:2px 8px;font-weight:600;flex-shrink:0">${e.status}</span>
+          </div>
+          <div style="font-size:11px;color:#7A7A7A;margin-top:3px;display:flex;gap:12px;flex-wrap:wrap">
+            <span>${entsDone}/${entsTotal} entregables (${entsPct}%)</span>
+            ${e.fechaInicio?`<span>▶ Inicio: ${e.fechaInicio}</span>`:""}
+            ${e.fechaFin?`<span>⏱ Compromiso: ${e.fechaFin}</span>`:""}
+            ${e.responsable?`<span>👤 ${e.responsable}</span>`:""}
+          </div>
+          ${entregablesHTML}
+          ${e.notas?`<div style="margin-top:5px;font-size:11px;color:#7A7A7A;font-style:italic">💬 ${e.notas}</div>`:""}
+        </div>
+      </div>`;
+  }).join("");
+
+  const tareasHTML = proyecto.tareas.length>0?`
+    <div style="margin-top:20px;break-before:auto">
+      <h3 style="font-size:13px;font-weight:700;color:#1A2332;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #E8E4DC">📋 Tareas (${proyecto.tareas.length})</h3>
+      ${proyecto.tareas.map(t=>`
+        <div style="display:flex;gap:10px;padding:7px 10px;border:1px solid #E8E4DC;border-radius:7px;margin-bottom:5px;break-inside:avoid">
+          <div style="flex:1;font-size:12px;color:#1A2332">${t.nombre}</div>
+          <div style="font-size:11px;color:#7A7A7A;flex-shrink:0">${t.responsable||""}</div>
+          <div style="font-size:11px;color:#7A7A7A;flex-shrink:0">${t.fechaLimite||""}</div>
+          <div style="font-size:10px;background:#E8E4DC;border-radius:4px;padding:1px 7px;flex-shrink:0">${t.status}</div>
+        </div>`).join("")}
+    </div>`:"";
+
+  const html = `<!DOCTYPE html><html><head>
+    <meta charset="UTF-8">
+    <title>Proceso — ${proyecto.nombre}</title>
+    <style>
+      *{box-sizing:border-box;margin:0;padding:0}
+      body{font-family:'DM Sans','Segoe UI',Arial,sans-serif;background:#fff;color:#1A2332;padding:32px;max-width:900px;margin:0 auto}
+      @media print{body{padding:20px}@page{margin:1.5cm;size:A4}}
+    </style>
+  </head><body>
+    <!-- Header -->
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid ${proyecto.color}">
+      <div>
+        <div style="font-size:10px;color:#7A7A7A;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Proceso de Desarrollo</div>
+        <div style="font-size:24px;font-weight:900;color:#1A2332">${proyecto.nombre}</div>
+        <div style="font-size:13px;color:#7A7A7A;margin-top:3px">${proyecto.cliente} · ${proyecto.maquilador}, ${proyecto.pais} · ${proyecto.forma}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:28px;font-weight:900;color:${proyecto.color}">${pct}%</div>
+        <div style="font-size:11px;color:#7A7A7A">completado</div>
+        <div style="font-size:12px;font-weight:700;color:#1D4ED8;margin-top:4px">🚀 ${proyecto.fechaLanzamiento}</div>
+      </div>
+    </div>
+    <!-- Barra progreso -->
+    <div style="height:6px;background:#E8E4DC;border-radius:99px;margin-bottom:20px;overflow:hidden">
+      <div style="width:${pct}%;height:100%;background:${proyecto.color};border-radius:99px"></div>
+    </div>
+    <!-- Resumen -->
+    <div style="display:flex;gap:10px;margin-bottom:20px">
+      ${[
+        ["Total etapas",proyecto.etapas.length],
+        ["Completadas",proyecto.etapas.filter(e=>e.status==="Completado").length],
+        ["En progreso",proyecto.etapas.filter(e=>e.status==="En progreso").length],
+        ["Pendientes",proyecto.etapas.filter(e=>e.status==="Pendiente").length],
+        ["Retrasadas",proyecto.etapas.filter(e=>e.status==="Retrasado").length],
+      ].map(([l,v])=>`<div style="flex:1;background:#F7F6F2;border-radius:8px;padding:8px 10px;text-align:center"><div style="font-size:18px;font-weight:800;color:#1A2332">${v}</div><div style="font-size:10px;color:#7A7A7A;margin-top:2px">${l}</div></div>`).join("")}
+    </div>
+    <!-- Etapas -->
+    <h3 style="font-size:13px;font-weight:700;color:#1A2332;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #E8E4DC">🔄 Etapas del proceso</h3>
+    ${etapasHTML}
+    ${tareasHTML}
+    <!-- Footer -->
+    <div style="margin-top:24px;padding-top:12px;border-top:1px solid #E8E4DC;font-size:10px;color:#7A7A7A;display:flex;justify-content:space-between">
+      <span>Genomma Lab · Gestión de Proyectos OTC & Cosméticos</span>
+      <span>Generado: ${new Date().toLocaleDateString("es-MX",{day:"2-digit",month:"long",year:"numeric"})}</span>
+    </div>
+  </body></html>`;
+
+  const w = window.open("","_blank","width=900,height=700");
+  if(!w){alert("Habilita ventanas emergentes para exportar PDF");return;}
+  w.document.write(html);
+  w.document.close();
+  w.onload = ()=>{ w.focus(); w.print(); };
+};
 
 // ─── APP PRINCIPAL ─────────────────────────────────────────────────────────────
 function App(){
